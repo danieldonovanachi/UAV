@@ -1,0 +1,61 @@
+resource_types:
+  - name: git
+    type: registry-image
+    source: { repository: concourse/git-resource }
+
+resources:
+  - name: source
+    type: git
+    source:
+      uri: https://codeberg.org/aabizri/uas
+      branch: dev
+
+# TODO: use set_pipeline as a way to populate the pipeline
+# based on supported targets, etc.
+jobs:
+  - name: tests
+    plan:
+    - get: source
+      trigger: true
+    - in_parallel:
+        fail_fast: true
+        steps:
+          - task: test-linux-x86_64
+            config:
+              platform: linux
+              image_resource:
+                type: registry-image
+                source:
+                  repository: rustlang/rust
+                  tag: nightly-slim
+              inputs:
+                - name: repo
+              run:
+                path: sh
+                args:
+                  - -c
+                  - |
+                     rustup target add x86_64-unknown-linux-gnu
+                     cargo test --target x86_64-unknown-linux-gnu
+  - name: build-release
+    plan:
+      - get: source
+        passed: [tests]
+      - task: build-linux-x86_64
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: rustlang/rust
+              tag: nightly-slim
+          inputs:
+            - name: repo
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                rustup target add x86_64-unknown-linux-gnu
+                cargo test --target x86_64-unknown-linux-gnu
+        
