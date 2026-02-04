@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<mavlink>
+
+    <include>common.xml</include>
+
+    <!-- NOTE: If the included file already contains a version tag, remove the version tag here, else uncomment to enable. -->
+    <!--<version>6</version>-->
+    <dialect>8</dialect>
+
+    <enums>
+        <!-- Enums are defined here (optional) -->
+        <enum name="SURFACE_REFERENTIAL_REFERENCE_DEFAULT_MAPPING">
+            <description>Once locked, and in the associated frame, how to interpret the resulting 2D vectors</description>
+            <entry value="0" name="SURFACE_REFERENTIAL_REFERENCE_DEFAULT_MAPPING_Y_DOWN_X_RIGHT">
+                <description>Y is down, X is right (i.e. DirectX style)</description>
+            </entry>
+            <entry value="1" name="SURFACE_REFERENTIAL_REFERENCE_DEFAULT_MAPPING_Y_UP_X_RIGHT">
+                <description>Y is up, X is right</description>
+            </entry>
+            <entry value="2" name="SURFACE_REFERENTIAL_REFERENCE_DEFAULT_MAPPING_Y_DOWN_X_LEFT">
+                <description>Y is down, X is left</description>
+            </entry>
+            <entry value="3" name="SURFACE_REFERENTIAL_REFERENCE_DEFAULT_MAPPING_Y_UP_X_LEFT">
+                <description>Y is up, X is left</description>
+            </entry>
+        </enum>
+    </enums>
+
+    <messages>
+
+        <!-- Messages are defined here (optional) -->
+        <message id="29238" name="SURFACE_REFERENTIAL_CREATE">
+            <description>Instruct the rover to create a reference to a surface, following the hint in the given coordinate frame.</description>
+            <wip/>
+
+            <field type="bool" name="lock">Should the rover lock to the surface after creating the reference ?</field>
+
+            <!-- There is a hint, which is used to tell the rover where to look for a wall -->
+            <field type="uint8_t" name="hint_frame" enum="MAV_FRAME">Frame of reference of the hint vector</field>
+            <field type="float" name="hint_x" units="m" invalid="NaN">Hint vector of where to look for the wall (x component) </field>
+            <field type="float" name="hint_y" units="m" invalid="NaN">Hint vector of where to look for the wall (y component) </field>
+            <field type="float" name="hint_z" units="m" invalid="NaN">Hint vector of where to look for the wall (z component) </field>
+        
+            <!-- This is the matrix to convert from the surface frame of reference, to the given frame of reference -->
+            <field type="uint8_t" name="reference_frame" enum="MAV_FRAME">Frame of reference of the hint vector</field>
+            
+
+            <!-- The up vector will generally be simply (0, 1, 0) -->
+            <field type="float" name="reference_up_x" units="m" invalid="NaN">The up vector in the frame of reference (x component)</field>
+            <field type="float" name="reference_up_y" units="m" invalid="NaN">The up vector in the frame of reference (y component)</field>
+            <field type="float" name="reference_up_z" units="m" invalid="NaN">The up vector in the frame of reference (z component)</field>
+
+            <!-- The current position on the plane -->*
+            <field type="uint8_t" name="reference_default_mapping" enum="SURFACE_REFERENTIAL_REFERENCE_DEFAULT_MAPPING">Mapping (default) of the plane coordinates to the 3D frame of reference</field>
+            <field type="float" name="reference_pos_x" units="m" invalid="NaN">The resulting position of the current plane (x component) </field>
+            <field type="float" name="reference_pos_y" units="m" invalid="NaN">The resulting position of the current plane (y component)</field>
+        </message>
+
+        <message id="29239" name="SURFACE_REFERENTIAL_CREATED">
+            <description>Reply that the surface reference has been created</description>
+            <wip/>
+            <field type="uint32_t" name="referential">Referential id created</field>
+        </message>
+
+        <message id="29239" name="SURFACE_REFERENTIAL_DESTROY">
+            <description>Destroy a referential</description>
+            <wip/>
+            <field type="uint32_t" name="referential">Referential to destroy</field>
+        </message>
+
+        <message id="29239" name="SURFACE_REFERENTIAL_LOCK">
+            <description>Instruct the rover to lock again to a surface, using a referential that has already been created</description>
+            <wip/>
+            <field type="uint32_t" name="referential">Referential to lock to</field>
+            <field type="bool" name="lock">Refresh the lock</field>
+        </message>
+
+        <message id="29239" name="SURFACE_REFERENTIAL_UNLOCK">
+            <description>Instruct the rover to unlock from a surface, when lock has been acquired</description>
+            <wip/>
+            <field type="uint32_t" name="referential">Referential to unlock from</field>
+        </message>
+
+        <message id="29240" name="SURFACE_REFERENTIAL_MISSION_RUN">
+            <description>Runs a mission on the given surface</description>
+            <wip/>
+            <field type="uint32_t" name="referential">Referential ID</field>
+            <field type="uint32_t" name="mission">Mission-Referential ID</field>
+            <field type="uint32_t" name="start_at">Start at the given step</field>
+        </message>
+
+        <message id="29240" name="SURFACE_REFERENTIAL_MISSION_PAUSE">
+        </message>
+
+    </messages>
+
+
+</mavlink>

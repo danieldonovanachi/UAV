@@ -1,0 +1,50 @@
+[package]
+name = "sim"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+rust-version.workspace = true
+
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+# Enable more optimization in the release profile at the cost of compile time.
+[profile.release]
+# Compile the entire crate as one unit.
+# Slows compile times, marginal improvements.
+codegen-units = 1
+# Do a second optimization pass over the entire program, including dependencies.
+# Slows compile times, marginal improvements.
+lto = "thin"
+
+# Optimize for size in the wasm-release profile to reduce load times and bandwidth usage on web.
+[profile.wasm-release]
+# Default to release profile values.
+inherits = "release"
+# Optimize with size in mind (also try "z", sometimes it is better).
+# Slightly slows compile times, great improvements to file size and runtime performance.
+opt-level = "s"
+# Strip all debugging information from the binary to slightly reduce file size.
+strip = "debuginfo"
+
+[dependencies]
+bevy = "0.17.3"
+bevy_audio = "0.17.3"
+nalgebra = "0.33.2"
+plot_planner = {workspace = true}
+# hdp_common is re-exported from plot_planner::generation::hdp_common (when available)
+# hdp_common = {workspace = true, features = ["image"]}
+rand = "0.9.2"
+rand_xoshiro = "0.7.0"
+image = "0.25.6"
+rfd = "0.16.0"
+serialport = "4.8.1"
+clap = { version = "4.5.54", default-features = false, features = ["std", "color", "error-context", "help", "suggestions", "usage", "derive"] }

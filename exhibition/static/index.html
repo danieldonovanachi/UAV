@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAV Spraying Exhibition Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: #1a1a1a;
+            padding: 15px;
+            border: 2px solid #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .status {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .status-indicator.connected {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .panel {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .panel h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .upload-area {
+            border: 2px dashed #00ff00;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            background: #0f0f0f;
+            border-color: #00ff88;
+        }
+
+        .upload-area.dragover {
+            background: #0f0f0f;
+            border-color: #00ff88;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #00ff88;
+            box-shadow: 0 0 15px #00ff00;
+        }
+
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border: 2px solid #00ff00;
+        }
+
+        #pathCanvas, #drawingCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .telemetry {
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .telemetry-item {
+            margin-bottom: 8px;
+            padding: 5px;
+            background: #0f0f0f;
+        }
+
+        .telemetry-label {
+            color: #888;
+            margin-right: 10px;
+        }
+
+        .log {
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #0a0a0a;
+            padding: 10px;
+            border: 1px solid #333;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            color: #00ff00;
+        }
+
+        .log-entry.error {
+            color: #ff0000;
+        }
+
+        .log-entry.warning {
+            color: #ffaa00;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #0f0f0f;
+            border: 1px solid #00ff00;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #00ff00;
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>UAV SPRAYING EXHIBITION</h1>
+            <div class="status">
+                <div>
+                    <span>PX4:</span>
+                    <span class="status-indicator" id="px4Status"></span>
+                </div>
+                <div>
+                    <span>Simulation:</span>
+                    <span class="status-indicator" id="simStatus"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Image Input</h2>
+            <div class="upload-area" id="uploadArea">
+                <p>Drag & Drop Image Here</p>
+                <p style="font-size: 12px; color: #888; margin-top: 10px;">or click to select</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+            
+            <div id="imagePreview" style="margin: 20px 0;"></div>
+            
+            <button id="generateBtn" disabled>Generate Path</button>
+            <button id="startBtn" disabled>Start Simulation</button>
+            <button id="stopBtn" disabled>Stop Simulation</button>
+
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="log" id="log"></div>
+        </div>
+
+        <div class="panel">
+            <h2>Visualization</h2>
+            <div class="canvas-container">
+                <canvas id="drawingCanvas" style="position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;"></canvas>
+                <canvas id="pathCanvas" style="position: relative; z-index: 2;"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Telemetry</h2>
+            <div class="telemetry" id="telemetry">
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Position:</span>
+                    <span id="position">--</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Velocity:</span>
+                    <span id="velocity">--</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Status:</span>
+                    <span id="status">--</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Waypoint:</span>
+                    <span id="waypoint">--</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Battery:</span>
+                    <span id="battery">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Algorithm Process</h2>
+            <div id="algorithmView">
+                <p style="color: #888;">Upload an image to see the path generation process</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentPath = null;
+        let canvas, ctx;
+        let drawingCanvas, drawingCtx;
+        let paintedWaypoints = new Set();
+        let currentWaypointIndex = 0;
+        let dronePosition = { x: 0, y: 0, z: 0 };
+        let animationFrameId = null;
+        let isSimulationRunning = false;
+        let lastTelemetryTime = 0;
+        let simulationSpeed = 0.03; // Same speed as Bevy simulation (0.03 units per ms)
+
+        function init() {
+            canvas = document.getElementById('pathCanvas');
+            ctx = canvas.getContext('2d');
+            drawingCanvas = document.getElementById('drawingCanvas');
+            drawingCtx = drawingCanvas.getContext('2d');
+            resizeCanvas();
+
+            // Setup file upload
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            document.getElementById('generateBtn').addEventListener('click', generatePath);
+            document.getElementById('startBtn').addEventListener('click', startSimulation);
+            document.getElementById('stopBtn').addEventListener('click', stopSimulation);
+
+            connectWebSocket();
+            updateStatus();
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            drawingCanvas.width = container.clientWidth;
+            drawingCanvas.height = container.clientHeight;
+            
+            // Setup drawing canvas
+            drawingCtx.lineCap = 'round';
+            drawingCtx.lineJoin = 'round';
+            
+            if (currentPath) {
+                drawPath();
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                log('WebSocket connected', 'info');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Handle different message types
+                    if (data.type === 'telemetry') {
+                        handleTelemetry(data.data);
+                    } else if (data.type === 'drawing_stroke') {
+                        handleDrawingStroke(data.data);
+                    } else if (data.type === 'drawing_end') {
+                        // Drawing stroke ended
+                    } else if (data.type === 'drawing_clear') {
+                        drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                        log('Drawing cleared', 'info');
+                    } else if (data.type === 'image_submit') {
+                        handleImageSubmit(data.image);
+                    } else if (data.type === 'ack') {
+                        // Handle acknowledgment from server after image processing
+                        if (data.success) {
+                            if (data.path) {
+                                currentPath = data.path;
+                                paintedWaypoints.clear();
+                                currentWaypointIndex = 0;
+                                log(`Path generated from drawing: ${data.waypoints} waypoints`, 'info');
+                                drawPath();
+                                document.getElementById('startBtn').disabled = false;
+                                updateAlgorithmView(data.path);
+                            } else {
+                                log(`Image received: ${data.waypoints || 0} waypoints`, 'info');
+                            }
+                        } else {
+                            log(`Error: ${data.error || 'Unknown error'}`, 'error');
+                        }
+                    } else {
+                        // Legacy telemetry format
+                        handleTelemetry(data);
+                    }
+                } catch (error) {
+                    log(`Error parsing WebSocket message: ${error.message}`, 'error');
+                }
+            };
+            
+            ws.onerror = (error) => {
+                log('WebSocket error', 'error');
+            };
+            
+            ws.onclose = () => {
+                log('WebSocket disconnected', 'warning');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                log('Please select an image file', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 200px;">`;
+                document.getElementById('generateBtn').disabled = false;
+                log(`Loaded image: ${file.name}`, 'info');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function generatePath() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                log('Please select an image first', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    const text = await response.text();
+                    log(`Error: Server returned invalid JSON. Status: ${response.status}, Response: ${text}`, 'error');
+                    return;
+                }
+                
+                if (!response.ok) {
+                    log(`Error: ${data.error || 'Unknown error'}`, 'error');
+                    return;
+                }
+                
+                if (data.success) {
+                    currentPath = data.path;
+                    paintedWaypoints.clear();
+                    currentWaypointIndex = 0;
+                    log(`Path generated: ${data.waypoints} waypoints`, 'info');
+                    drawPath();
+                    document.getElementById('startBtn').disabled = false;
+                    updateAlgorithmView(data.path);
+                } else {
+                    log(`Error: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('progressBar').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        function getTransform() {
+            if (!currentPath || !currentPath.waypoints) return null;
+            
+            const waypoints = currentPath.waypoints;
+            const xs = waypoints.map(w => w.x);
+            const ys = waypoints.map(w => w.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            
+            const width = maxX - minX;
+            const height = maxY - minY;
+            const scale = Math.min(canvas.width / width, canvas.height / height) * 0.9;
+            const offsetX = (canvas.width - width * scale) / 2 - minX * scale;
+            const offsetY = (canvas.height - height * scale) / 2 - minY * scale;
+            
+            return { scale, offsetX, offsetY };
+        }
+
+        function worldToCanvas(worldX, worldY) {
+            const transform = getTransform();
+            if (!transform) return { x: 0, y: 0 };
+            return {
+                x: worldX * transform.scale + transform.offsetX,
+                y: worldY * transform.scale + transform.offsetY
+            };
+        }
+
+        function drawPath() {
+            if (!currentPath || !currentPath.waypoints) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const transform = getTransform();
+            if (!transform) return;
+            
+            const { scale, offsetX, offsetY } = transform;
+            const waypoints = currentPath.waypoints;
+
+            // Draw path
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < waypoints.length; i++) {
+                const wp = waypoints[i];
+                const x = wp.x * scale + offsetX;
+                const y = wp.y * scale + offsetY;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+
+            // Draw waypoints with different colors for painted/unpainted
+            for (let i = 0; i < waypoints.length; i++) {
+                const wp = waypoints[i];
+                const x = wp.x * scale + offsetX;
+                const y = wp.y * scale + offsetY;
+                
+                if (paintedWaypoints.has(i)) {
+                    // Painted waypoint - green with glow (like Bevy simulation)
+                    ctx.fillStyle = '#00ff00';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#00ff00';
+                } else if (i === currentWaypointIndex) {
+                    // Current waypoint - yellow
+                    ctx.fillStyle = '#ffff00';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#ffff00';
+                } else {
+                    // Unpainted waypoint - dark red (like Bevy simulation)
+                    ctx.fillStyle = '#330000';
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.beginPath();
+                ctx.arc(x, y, paintedWaypoints.has(i) ? 5 : 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw painted path segments
+                if (i > 0 && paintedWaypoints.has(i - 1) && paintedWaypoints.has(i)) {
+                    const prevWp = waypoints[i - 1];
+                    const prevX = prevWp.x * scale + offsetX;
+                    const prevY = prevWp.y * scale + offsetY;
+                    
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 4;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00ff00';
+                    ctx.beginPath();
+                    ctx.moveTo(prevX, prevY);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw drone (white circle like Bevy simulation)
+            if (isSimulationRunning) {
+                const droneCanvasPos = worldToCanvas(dronePosition.x, dronePosition.y);
+                
+                // Draw drone with white fill and glow
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(droneCanvasPos.x, droneCanvasPos.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw crosshair lines (like Bevy simulation)
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = '#ffffff';
+                
+                // Vertical line
+                ctx.beginPath();
+                ctx.moveTo(droneCanvasPos.x, droneCanvasPos.y - 10000 * transform.scale);
+                ctx.lineTo(droneCanvasPos.x, droneCanvasPos.y + 10000 * transform.scale);
+                ctx.stroke();
+                
+                // Horizontal line
+                ctx.beginPath();
+                ctx.moveTo(droneCanvasPos.x - 10000 * transform.scale, droneCanvasPos.y);
+                ctx.lineTo(droneCanvasPos.x + 10000 * transform.scale, droneCanvasPos.y);
+                ctx.stroke();
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+
+        function animate() {
+            if (isSimulationRunning && currentPath && currentPath.waypoints.length > 0) {
+                const now = Date.now();
+                const timeSinceLastTelemetry = now - lastTelemetryTime;
+                
+                // If no telemetry received in last 100ms, simulate movement
+                if (timeSinceLastTelemetry > 100 && currentWaypointIndex < currentPath.waypoints.length) {
+                    simulateDroneMovement();
+                }
+                
+                drawPath();
+                animationFrameId = requestAnimationFrame(animate);
+            }
+        }
+
+        function simulateDroneMovement() {
+            if (!currentPath || currentPath.waypoints.length === 0) return;
+            if (currentWaypointIndex >= currentPath.waypoints.length) return;
+            
+            const targetWp = currentPath.waypoints[currentWaypointIndex];
+            const dx = targetWp.x - dronePosition.x;
+            const dy = targetWp.y - dronePosition.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 2.0) {
+                // Reached waypoint - mark as painted and move to next
+                paintedWaypoints.add(currentWaypointIndex);
+                currentWaypointIndex = Math.min(currentWaypointIndex + 1, currentPath.waypoints.length - 1);
+                
+                if (currentWaypointIndex < currentPath.waypoints.length) {
+                    log(`Waypoint ${currentWaypointIndex - 1} reached`, 'info');
+                } else {
+                    log('Mission complete!', 'info');
+                    stopSimulation();
+                }
+            } else {
+                // Move towards waypoint
+                const normalized = { x: dx / distance, y: dy / distance };
+                const delta = simulationSpeed * 16; // ~60fps
+                dronePosition.x += normalized.x * delta;
+                dronePosition.y += normalized.y * delta;
+                dronePosition.z = targetWp.z;
+            }
+        }
+
+        async function startSimulation() {
+            if (!currentPath) {
+                log('Please generate a path first', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: currentPath })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    log('Simulation started', 'info');
+                    paintedWaypoints.clear();
+                    currentWaypointIndex = 0;
+                    isSimulationRunning = true;
+                    
+                    // Initialize drone position to start position (0,0) or first waypoint
+                    if (currentPath.waypoints.length > 0) {
+                        // Start at origin like Bevy simulation, or at first waypoint
+                        dronePosition = { x: 0, y: 0, z: currentPath.waypoints[0].z || 1.0 };
+                        currentWaypointIndex = 0;
+                    }
+                    
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    
+                    // Start animation loop
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
+                    animate();
+                } else {
+                    log(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopSimulation() {
+            try {
+                const response = await fetch('/api/stop', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    log('Simulation stopped', 'info');
+                    isSimulationRunning = false;
+                    
+                    // Stop animation loop
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                        animationFrameId = null;
+                    }
+                    
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    
+                    // Redraw without drone
+                    drawPath();
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function handleTelemetry(message) {
+            const msg = message.message_type;
+            lastTelemetryTime = Date.now();
+            
+            if (msg.type === 'Position') {
+                // Update drone position for visualization
+                dronePosition = { x: msg.x, y: msg.y, z: msg.z };
+                
+                // Update telemetry display
+                document.getElementById('position').textContent = 
+                    `(${msg.x.toFixed(2)}, ${msg.y.toFixed(2)}, ${msg.z.toFixed(2)})`;
+                
+                // Check if drone reached current waypoint
+                if (currentPath && currentPath.waypoints.length > 0 && currentWaypointIndex < currentPath.waypoints.length) {
+                    const targetWp = currentPath.waypoints[currentWaypointIndex];
+                    const distance = Math.sqrt(
+                        Math.pow(msg.x - targetWp.x, 2) + 
+                        Math.pow(msg.y - targetWp.y, 2)
+                    );
+                    
+                    // If within 2 units (like Bevy simulation radius), mark as reached
+                    if (distance < 2.0) {
+                        paintedWaypoints.add(currentWaypointIndex);
+                        currentWaypointIndex = Math.min(currentWaypointIndex + 1, currentPath.waypoints.length - 1);
+                        log(`Waypoint ${currentWaypointIndex - 1} reached`, 'info');
+                        
+                        // If mission complete
+                        if (currentWaypointIndex >= currentPath.waypoints.length) {
+                            log('Mission complete!', 'info');
+                            stopSimulation();
+                        }
+                    }
+                }
+            } else if (msg.type === 'Velocity') {
+                document.getElementById('velocity').textContent = 
+                    `(${msg.vx.toFixed(2)}, ${msg.vy.toFixed(2)}, ${msg.vz.toFixed(2)})`;
+            } else if (msg.type === 'Status') {
+                document.getElementById('status').textContent = 
+                    `${msg.mode} | ${msg.armed ? 'ARMED' : 'DISARMED'}`;
+                document.getElementById('battery').textContent = `${msg.battery.toFixed(1)}%`;
+            } else if (msg.type === 'WaypointReached') {
+                const waypointIndex = msg.waypoint || 0;
+                paintedWaypoints.add(waypointIndex);
+                currentWaypointIndex = Math.min(waypointIndex + 1, currentPath ? currentPath.waypoints.length - 1 : 0);
+                log(`Waypoint ${waypointIndex} reached`, 'info');
+            } else if (msg.type === 'SprayTriggered') {
+                const waypointIndex = msg.waypoint || 0;
+                paintedWaypoints.add(waypointIndex);
+                log(`SPRAY TRIGGERED at waypoint ${waypointIndex}`, 'info');
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                document.getElementById('px4Status').classList.toggle('connected', data.connected);
+                document.getElementById('simStatus').classList.toggle('connected', data.running);
+            } catch (error) {
+                // Ignore
+            }
+            
+            setTimeout(updateStatus, 2000);
+        }
+
+        function updateAlgorithmView(path) {
+            const view = document.getElementById('algorithmView');
+            view.innerHTML = `
+                <div class="telemetry">
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">Waypoints:</span>
+                        <span>${path.waypoints.length}</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">Path Length:</span>
+                        <span>${calculatePathLength(path.waypoints).toFixed(2)}m</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function calculatePathLength(waypoints) {
+            let length = 0;
+            for (let i = 1; i < waypoints.length; i++) {
+                const dx = waypoints[i].x - waypoints[i-1].x;
+                const dy = waypoints[i].y - waypoints[i-1].y;
+                length += Math.sqrt(dx*dx + dy*dy);
+            }
+            return length;
+        }
+
+        function handleDrawingStroke(strokeData) {
+            // Draw stroke on the drawing canvas
+            const fromX = strokeData.from.x * drawingCanvas.width;
+            const fromY = strokeData.from.y * drawingCanvas.height;
+            const toX = strokeData.to.x * drawingCanvas.width;
+            const toY = strokeData.to.y * drawingCanvas.height;
+            const size = strokeData.size * drawingCanvas.width;
+            
+            drawingCtx.strokeStyle = strokeData.color;
+            drawingCtx.lineWidth = size;
+            drawingCtx.beginPath();
+            drawingCtx.moveTo(fromX, fromY);
+            drawingCtx.lineTo(toX, toY);
+            drawingCtx.stroke();
+        }
+
+        async function handleImageSubmit(imageDataUrl) {
+            // Convert data URL to blob and process
+            try {
+                // Convert data URL to blob
+                const blob = await (await fetch(imageDataUrl)).blob();
+                
+                const formData = new FormData();
+                formData.append('image', blob, 'drawing.png');
+                
+                document.getElementById('progressBar').style.display = 'block';
+                
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                let data;
+                try {
+                    data = await uploadResponse.json();
+                } catch (parseError) {
+                    const text = await uploadResponse.text();
+                    log(`Error: Server returned invalid JSON. Status: ${uploadResponse.status}, Response: ${text}`, 'error');
+                    return;
+                }
+                
+                if (!uploadResponse.ok) {
+                    log(`Error: ${data.error || 'Unknown error'}`, 'error');
+                    return;
+                }
+                
+                if (data.success) {
+                    currentPath = data.path;
+                    paintedWaypoints.clear();
+                    currentWaypointIndex = 0;
+                    log(`Path generated from drawing: ${data.waypoints} waypoints`, 'info');
+                    drawPath();
+                    document.getElementById('startBtn').disabled = false;
+                    updateAlgorithmView(data.path);
+                    
+                    // Clear drawing canvas after processing
+                    setTimeout(() => {
+                        drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                    }, 2000);
+                } else {
+                    log(`Error: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`Error processing drawing: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('progressBar').style.display = 'none';
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        init();
+    </script>
+</body>
+</html>

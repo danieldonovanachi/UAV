@@ -1,0 +1,31 @@
+// example IDL file
+
+namespace SurfaceReferentialMission;
+
+enum Color : byte { Red = 1, Green, Blue }
+
+union Any { Monster, Weapon, Pickup }
+
+struct Vec2 {
+  x:float;
+  y:float;
+}
+
+table Waypoint {
+  pos:Vec2;
+  
+
+  /// This is a MAVLink message, or set of messages, serialized, to be executed when passing through
+  associated_message:[ubyte];
+}
+
+table Mission {
+    id:uint32;
+    waypoints: [Waypoint];
+}
+
+table MissionSet {
+    missions: [Mission];
+}
+
+root_type MissionSet;

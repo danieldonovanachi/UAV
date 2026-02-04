@@ -1,0 +1,12 @@
+[package]
+name = "link"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+mavlink = {version = "0.16.1", default-features = false, features = ["std", "common", "format-generated-code"]}

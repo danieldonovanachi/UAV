@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>UAV Drawing Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-bottom: 2px solid #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #00ff00;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+            margin-left: 10px;
+        }
+
+        .status-indicator.connected {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .style-toggle {
+            display: flex;
+            gap: 5px;
+            background: #0f0f0f;
+            padding: 5px;
+            border-radius: 8px;
+            margin: 10px 20px;
+        }
+
+        .style-button {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            color: #888;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .style-button.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: #fff;
+            touch-action: none;
+            overflow: hidden;
+        }
+
+        #drawingCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        #gridCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        .controls {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-top: 2px solid #00ff00;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            min-width: 120px;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            background: #00ff88;
+        }
+
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: #333;
+            color: #fff;
+        }
+
+        button.secondary:active {
+            background: #444;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            background: #0f0f0f;
+            border-radius: 8px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+
+        .color-option:active {
+            transform: scale(0.9);
+        }
+
+        .color-option.active {
+            border-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .brush-size {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: #0f0f0f;
+            border-radius: 8px;
+        }
+
+        .brush-size label {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .brush-size input {
+            width: 100px;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #333;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .brush-size input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .brush-size input::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .grid-size {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: #0f0f0f;
+            border-radius: 8px;
+        }
+
+        .grid-size label {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .grid-size input {
+            width: 100px;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #333;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .grid-size input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .grid-size input::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .upload-section {
+            padding: 15px 20px;
+            background: #1a1a1a;
+            border-top: 2px solid #00ff00;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            flex: 1;
+            background: #333;
+            color: #fff;
+            padding: 16px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            touch-action: manipulation;
+        }
+
+        .upload-label:active {
+            background: #444;
+            transform: scale(0.98);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00ff00;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 5px;
+            background: #0f0f0f;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .mode-button {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            color: #888;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-button.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .style-panel {
+            display: none;
+        }
+
+        .style-panel.active {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>UAV Drawing Interface</h1>
+        <div class="connection-status">
+            <span>Connected</span>
+            <span class="status-indicator" id="statusIndicator"></span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="style-toggle">
+            <button class="style-button active" id="freehandBtn">Freehand</button>
+            <button class="style-button" id="gridBtn">Grid Paint</button>
+        </div>
+
+        <div class="mode-toggle" style="padding: 10px 20px; background: #1a1a1a;">
+            <button class="mode-button active" id="drawModeBtn">Draw</button>
+            <button class="mode-button" id="uploadModeBtn">Upload</button>
+        </div>
+
+        <!-- Freehand Drawing Panel -->
+        <div id="freehandPanel" class="style-panel active">
+            <div id="drawMode" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="canvas-container">
+                    <canvas id="drawingCanvas"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="color-picker">
+                        <div class="color-option active" data-color="#000000" style="background: #000;"></div>
+                        <div class="color-option" data-color="#ff0000" style="background: #ff0000;"></div>
+                        <div class="color-option" data-color="#00ff00" style="background: #00ff00;"></div>
+                        <div class="color-option" data-color="#0000ff" style="background: #0000ff;"></div>
+                        <div class="color-option" data-color="#ffff00" style="background: #ffff00;"></div>
+                        <div class="color-option" data-color="#ff00ff" style="background: #ff00ff;"></div>
+                    </div>
+                    <div class="brush-size">
+                        <label>Size:</label>
+                        <input type="range" id="brushSize" min="5" max="50" value="20">
+                    </div>
+                </div>
+            </div>
+
+            <div id="uploadMode" style="flex: 1; display: none; flex-direction: column; padding: 20px;">
+                <div class="upload-section">
+                    <input type="file" id="fileInput" accept="image/*">
+                    <label for="fileInput" class="upload-label">Choose Photo</label>
+                </div>
+                <div id="imagePreview" style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 20px;">
+                    <p style="color: #888; text-align: center;">Select an image to upload</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid Painting Panel -->
+        <div id="gridPanel" class="style-panel">
+            <div id="gridDrawMode" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="canvas-container">
+                    <canvas id="gridCanvas"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="color-picker" id="gridColorPicker">
+                        <!-- Colors will be added dynamically -->
+                    </div>
+                    <div class="grid-size">
+                        <label>Grid:</label>
+                        <input type="range" id="gridSize" min="10" max="100" value="30">
+                    </div>
+                </div>
+            </div>
+
+            <div id="gridUploadMode" style="flex: 1; display: none; flex-direction: column; padding: 20px;">
+                <div class="upload-section">
+                    <input type="file" id="gridFileInput" accept="image/*">
+                    <label for="gridFileInput" class="upload-label">Choose Photo</label>
+                </div>
+                <div id="gridImagePreview" style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 20px;">
+                    <p style="color: #888; text-align: center;">Select an image to upload</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls" style="border-top: 2px solid #00ff00;">
+        <div class="button-group">
+            <button class="secondary" id="clearBtn">Clear</button>
+            <button id="sendBtn">Send to Drone</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let ws = null;
+        let canvas, ctx;
+        let gridCanvas, gridCtx;
+        let isDrawing = false;
+        let currentColor = '#000000';
+        let brushSize = 20;
+        let lastX = 0, lastY = 0;
+        let currentMode = 'draw';
+        let imageData = null;
+        let currentStyle = 'freehand';
+        
+        // Grid painting variables
+        let gridSize = 30;
+        let gridData = {}; // Store filled cells: "x,y" -> color
+        let gridRows = 0;
+        let gridCols = 0;
+
+        // Extended color palette for grid painting
+        const gridColors = [
+            '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff',
+            '#ffff00', '#ff00ff', '#00ffff', '#ff8800', '#8800ff',
+            '#00ff88', '#ff0088', '#888888', '#ff4444', '#44ff44',
+            '#4444ff', '#ffff44', '#ff44ff', '#44ffff', '#ffaa00',
+            '#aa00ff', '#00ffaa', '#ff00aa', '#aaaaaa', '#ff6666',
+            '#66ff66', '#6666ff', '#ffff66', '#ff66ff', '#66ffff'
+        ];
+
+        function init() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+            gridCanvas = document.getElementById('gridCanvas');
+            gridCtx = gridCanvas.getContext('2d');
+            
+            resizeCanvas();
+            resizeGridCanvas();
+
+            // Setup drawing
+            setupDrawing();
+            setupGridPainting();
+
+            // Setup controls
+            setupControls();
+            setupGridControls();
+
+            // Setup WebSocket
+            connectWebSocket();
+
+            // Setup style toggle
+            document.getElementById('freehandBtn').addEventListener('click', () => switchStyle('freehand'));
+            document.getElementById('gridBtn').addEventListener('click', () => switchStyle('grid'));
+
+            // Setup mode toggle
+            document.getElementById('drawModeBtn').addEventListener('click', () => switchMode('draw'));
+            document.getElementById('uploadModeBtn').addEventListener('click', () => switchMode('upload'));
+
+            // Setup file upload
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            document.getElementById('gridFileInput').addEventListener('change', handleGridFileUpload);
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+        }
+
+        function resizeGridCanvas() {
+            const container = gridCanvas.parentElement;
+            gridCanvas.width = container.clientWidth;
+            gridCanvas.height = container.clientHeight;
+            
+            drawGrid();
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            resizeGridCanvas();
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                resizeCanvas();
+                resizeGridCanvas();
+            }, 100);
+        });
+
+        function setupDrawing() {
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDraw);
+            canvas.addEventListener('mouseout', stopDraw);
+
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+            canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+        }
+
+        function setupGridPainting() {
+            gridCanvas.addEventListener('mousedown', handleGridClick);
+            gridCanvas.addEventListener('touchstart', handleGridTouch, { passive: false });
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            startDraw({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                target: { getBoundingClientRect: () => rect }
+            });
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            draw({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                target: { getBoundingClientRect: () => rect }
+            });
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            stopDraw();
+        }
+
+        function startDraw(e) {
+            if (currentMode !== 'draw' || currentStyle !== 'freehand') return;
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+        }
+
+        function draw(e) {
+            if (!isDrawing || currentMode !== 'draw' || currentStyle !== 'freehand') return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'drawing_stroke',
+                    data: {
+                        from: { x: lastX / canvas.width, y: lastY / canvas.height },
+                        to: { x: x / canvas.width, y: y / canvas.height },
+                        color: currentColor,
+                        size: brushSize / canvas.width
+                    }
+                }));
+            }
+
+            lastX = x;
+            lastY = y;
+        }
+
+        function stopDraw() {
+            if (isDrawing) {
+                isDrawing = false;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'drawing_end'
+                    }));
+                }
+            }
+        }
+
+        function handleGridClick(e) {
+            if (currentStyle !== 'grid' || currentMode !== 'draw') return;
+            const rect = gridCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            fillGridCell(x, y);
+        }
+
+        function handleGridTouch(e) {
+            e.preventDefault();
+            if (currentStyle !== 'grid' || currentMode !== 'draw') return;
+            const touch = e.touches[0];
+            const rect = gridCanvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            fillGridCell(x, y);
+        }
+
+        function fillGridCell(x, y) {
+            const cellSize = gridCanvas.width / gridCols;
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+            
+            if (col >= 0 && col < gridCols && row >= 0 && row < gridRows) {
+                const key = `${col},${row}`;
+                gridData[key] = currentColor;
+                drawGrid();
+                
+                // Send grid update
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'grid_cell_fill',
+                        data: {
+                            col: col,
+                            row: row,
+                            color: currentColor,
+                            gridSize: gridSize
+                        }
+                    }));
+                }
+            }
+        }
+
+        function drawGrid() {
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+            
+            gridCols = Math.floor(gridCanvas.width / gridSize);
+            gridRows = Math.floor(gridCanvas.height / gridSize);
+            
+            const cellWidth = gridCanvas.width / gridCols;
+            const cellHeight = gridCanvas.height / gridRows;
+            
+            // Draw filled cells
+            for (const [key, color] of Object.entries(gridData)) {
+                const [col, row] = key.split(',').map(Number);
+                if (col >= 0 && col < gridCols && row >= 0 && row < gridRows) {
+                    gridCtx.fillStyle = color;
+                    gridCtx.fillRect(
+                        col * cellWidth,
+                        row * cellHeight,
+                        cellWidth,
+                        cellHeight
+                    );
+                }
+            }
+            
+            // Draw grid lines
+            gridCtx.strokeStyle = '#ddd';
+            gridCtx.lineWidth = 1;
+            
+            for (let i = 0; i <= gridCols; i++) {
+                const x = i * cellWidth;
+                gridCtx.beginPath();
+                gridCtx.moveTo(x, 0);
+                gridCtx.lineTo(x, gridCanvas.height);
+                gridCtx.stroke();
+            }
+            
+            for (let i = 0; i <= gridRows; i++) {
+                const y = i * cellHeight;
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, y);
+                gridCtx.lineTo(gridCanvas.width, y);
+                gridCtx.stroke();
+            }
+        }
+
+        function setupControls() {
+            document.querySelectorAll('#freehandPanel .color-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    document.querySelectorAll('#freehandPanel .color-option').forEach(opt => opt.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentColor = e.target.dataset.color;
+                    ctx.strokeStyle = currentColor;
+                });
+            });
+
+            document.getElementById('brushSize').addEventListener('input', (e) => {
+                brushSize = parseInt(e.target.value);
+                ctx.lineWidth = brushSize;
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                if (currentStyle === 'freehand') {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    gridData = {};
+                    drawGrid();
+                }
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: currentStyle === 'freehand' ? 'drawing_clear' : 'grid_clear'
+                    }));
+                }
+                showToast('Canvas cleared');
+            });
+
+            document.getElementById('sendBtn').addEventListener('click', sendToServer);
+        }
+
+        function setupGridControls() {
+            const gridColorPicker = document.getElementById('gridColorPicker');
+            gridColorPicker.innerHTML = '';
+            
+            gridColors.forEach(color => {
+                const option = document.createElement('div');
+                option.className = 'color-option';
+                if (color === currentColor) option.classList.add('active');
+                option.dataset.color = color;
+                option.style.background = color;
+                option.addEventListener('click', (e) => {
+                    document.querySelectorAll('#gridColorPicker .color-option').forEach(opt => opt.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentColor = e.target.dataset.color;
+                });
+                gridColorPicker.appendChild(option);
+            });
+
+            document.getElementById('gridSize').addEventListener('input', (e) => {
+                gridSize = parseInt(e.target.value);
+                drawGrid();
+            });
+        }
+
+        function switchStyle(style) {
+            currentStyle = style;
+            const freehandPanel = document.getElementById('freehandPanel');
+            const gridPanel = document.getElementById('gridPanel');
+            const freehandBtn = document.getElementById('freehandBtn');
+            const gridBtn = document.getElementById('gridBtn');
+
+            if (style === 'freehand') {
+                freehandPanel.classList.add('active');
+                gridPanel.classList.remove('active');
+                freehandBtn.classList.add('active');
+                gridBtn.classList.remove('active');
+            } else {
+                freehandPanel.classList.remove('active');
+                gridPanel.classList.add('active');
+                freehandBtn.classList.remove('active');
+                gridBtn.classList.add('active');
+                resizeGridCanvas();
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const drawMode = document.getElementById('drawMode');
+            const uploadMode = document.getElementById('uploadMode');
+            const gridDrawMode = document.getElementById('gridDrawMode');
+            const gridUploadMode = document.getElementById('gridUploadMode');
+            const drawBtn = document.getElementById('drawModeBtn');
+            const uploadBtn = document.getElementById('uploadModeBtn');
+
+            if (mode === 'draw') {
+                if (currentStyle === 'freehand') {
+                    drawMode.style.display = 'flex';
+                    uploadMode.style.display = 'none';
+                } else {
+                    gridDrawMode.style.display = 'flex';
+                    gridUploadMode.style.display = 'none';
+                }
+                drawBtn.classList.add('active');
+                uploadBtn.classList.remove('active');
+            } else {
+                if (currentStyle === 'freehand') {
+                    drawMode.style.display = 'none';
+                    uploadMode.style.display = 'flex';
+                } else {
+                    gridDrawMode.style.display = 'none';
+                    gridUploadMode.style.display = 'flex';
+                }
+                drawBtn.classList.remove('active');
+                uploadBtn.classList.add('active');
+            }
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+                imageData = event.target.result;
+                showToast('Image loaded');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleGridFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const preview = document.getElementById('gridImagePreview');
+                preview.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+                imageData = event.target.result;
+                showToast('Image loaded');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function sendToServer() {
+            let imageToSend = null;
+
+            if (currentMode === 'draw') {
+                if (currentStyle === 'freehand') {
+                    imageToSend = canvas.toDataURL('image/png');
+                } else {
+                    imageToSend = gridCanvas.toDataURL('image/png');
+                }
+            } else if (currentMode === 'upload' && imageData) {
+                imageToSend = imageData;
+            } else {
+                showToast('Please draw something or upload an image', 'error');
+                return;
+            }
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'image_submit',
+                    image: imageToSend,
+                    style: currentStyle
+                }));
+                showToast('Sending to drone...');
+            } else {
+                try {
+                    const blob = await dataURLtoBlob(imageToSend);
+                    const formData = new FormData();
+                    formData.append('image', blob, 'drawing.png');
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast('Image sent successfully!');
+                    } else {
+                        showToast('Error: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    showToast('Error sending image', 'error');
+                }
+            }
+        }
+
+        function dataURLtoBlob(dataURL) {
+            return fetch(dataURL).then(res => res.blob());
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                document.getElementById('statusIndicator').classList.add('connected');
+                showToast('Connected');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'ack') {
+                        if (data.success) {
+                            if (data.waypoints) {
+                                showToast(`Path generated: ${data.waypoints} waypoints`, 'success');
+                            } else {
+                                showToast('Image received by server', 'success');
+                            }
+                        } else {
+                            showToast(`Error: ${data.error || 'Unknown error'}`, 'error');
+                        }
+                    }
+                } catch (e) {
+                    // Ignore non-JSON messages
+                }
+            };
+            
+            ws.onerror = () => {
+                document.getElementById('statusIndicator').classList.remove('connected');
+            };
+            
+            ws.onclose = () => {
+                document.getElementById('statusIndicator').classList.remove('connected');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show';
+            if (type === 'error') {
+                toast.style.background = '#ff0000';
+            } else {
+                toast.style.background = '#00ff00';
+            }
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
