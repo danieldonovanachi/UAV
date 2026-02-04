@@ -1,0 +1,28 @@
+[workspace]
+members = ["canvas",  "link", "app", "plot_planner", "sim", "aosoa", "exhibition"]
+resolver = "1"
+
+[workspace.package]
+authors = ["Alexandre A. Bizri"]
+edition = "2021"
+repository = "https://github.com/redbadger/crux/"
+license = "Apache-2.0"
+keywords = ["crux", "crux_core", "cross-platform-ui", "ffi", "wasm"]
+rust-version = "1.80"
+
+[workspace.dependencies]
+anyhow = "1.0.95"
+crux_core = "0.12.0"
+serde = "1.0.217"
+plot_planner = {path = "plot_planner"}
+aosoa = {path = "aosoa"}
+# hdp_iter and hdp_common are optional - uncomment if you have ../oxycv directory
+# hdp_iter = {path = "../oxycv/hdp_iter"}
+# hdp_common = {path = "../oxycv/hdp_common"}
+
+simba = {version = "0.9.1", features = ["portable_simd"]}
+# Using nightly Rust (specified in rust-toolchain.toml) so portable_simd is available
+
+# Use patched local copy of simba (patched to add std::simd::Select import)
+[patch.crates-io]
+simba = { path = "vendor/simba-0.9.1" }
