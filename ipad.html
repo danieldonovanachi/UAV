@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>UAV Drawing Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-bottom: 2px solid #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #00ff00;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+            margin-left: 10px;
+        }
+
+        .status-indicator.connected {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* When grid panel is active, hide other content */
+        body:has(#gridPanel:not(.hidden)) .header,
+        body:has(#gridPanel:not(.hidden)) .style-toggle,
+        body:has(#gridPanel:not(.hidden)) .mode-toggle,
+        body:has(#gridPanel:not(.hidden)) #freehandPanel,
+        body:has(#gridPanel:not(.hidden)) .controls {
+            display: none !important;
+            pointer-events: none !important;
+        }
+        /* When dot panel is active, hide other content */
+        body:has(#dotPanel:not(.hidden)) .header,
+        body:has(#dotPanel:not(.hidden)) .style-toggle,
+        body:has(#dotPanel:not(.hidden)) .mode-toggle,
+        body:has(#dotPanel:not(.hidden)) #freehandPanel,
+        body:has(#dotPanel:not(.hidden)) .controls {
+            display: none !important;
+            pointer-events: none !important;
+        }
+
+        .style-toggle {
+            display: flex;
+            gap: 5px;
+            background: #0f0f0f;
+            padding: 5px;
+            border-radius: 8px;
+            margin: 10px 20px;
+        }
+
+        .style-button {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            color: #888;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .style-button.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: #fff;
+            touch-action: none;
+            overflow: hidden;
+            min-height: 0; /* Allow flex shrinking */
+            max-height: calc(100vh - 300px); /* Leave space for controls and header */
+        }
+
+        #drawingCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* Grid Panel - Full Screen Container like Grid.html */
+        .grid-panel-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            z-index: 100;
+            pointer-events: auto;
+            display: block;
+        }
+
+        .grid-panel-container.hidden {
+            display: none !important;
+            pointer-events: none;
+        }
+        
+        
+        #gridCanvasContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            z-index: 0; /* unter der Overlay-Schicht der Buttons */
+        }
+        /* iPad: Grid-Buttons in eigener Schicht, damit Touch immer die Buttons trifft */
+        #gridControlsOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483647;
+            pointer-events: none;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+        #gridControlsOverlay .icon,
+        #gridControlsOverlay #gridColorPalette {
+            pointer-events: auto;
+        }
+        
+        
+        
+        .grid-color-palette {
+            position: fixed !important;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex !important;
+            flex-direction: row;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 90%;
+            overflow-x: auto;
+            z-index: 1000 !important;
+            pointer-events: auto !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .grid-color-icon {
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            transition: transform 0.1s;
+        }
+        
+        .grid-color-icon:active {
+            transform: scale(0.9);
+        }
+        
+        .grid-color-icon.active {
+            border: 3px solid #000;
+            box-shadow: 0 0 0 2px #fff;
+        }
+
+        .controls {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-top: 2px solid #00ff00;
+            display: flex !important;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow-x: auto;
+            position: relative !important;
+            z-index: 1000 !important;
+            min-height: 80px; /* Ensure minimum height */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Ensure controls are visible in freehand panel */
+        #freehandPanel.active .controls {
+            display: flex !important;
+            pointer-events: auto !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Ensure drawMode shows controls */
+        #drawMode {
+            display: flex !important;
+            flex-direction: column !important;
+            position: relative;
+        }
+        
+        #drawMode .controls {
+            display: flex !important;
+            visibility: visible !important;
+            position: relative !important;
+            z-index: 1000 !important;
+            margin-top: auto; /* Push to bottom */
+        }
+        
+        /* Ensure drawMode is visible when freehand panel is active */
+        #freehandPanel.active #drawMode {
+            display: flex !important;
+            visibility: visible !important;
+        }
+        
+        /* Make sure controls are not hidden by canvas */
+        #drawMode .canvas-container {
+            position: relative;
+            z-index: 1;
+        }
+        
+        #drawMode .controls {
+            position: relative;
+            z-index: 2;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            min-width: 120px;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            background: #00ff88;
+        }
+
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: #333;
+            color: #fff;
+        }
+
+        button.secondary:active {
+            background: #444;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            background: #0f0f0f;
+            border-radius: 8px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+
+        .color-option:active {
+            transform: scale(0.9);
+        }
+
+        .color-option.active {
+            border-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        /* Ensure color picker is visible in freehand panel */
+        #freehandPanel.active .color-picker,
+        #drawMode .color-picker,
+        .controls .color-picker {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        #freehandPanel.active .color-option,
+        #drawMode .color-option,
+        .controls .color-option {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 40px !important;
+            height: 40px !important;
+        }
+
+        .brush-size {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: #0f0f0f;
+            border-radius: 8px;
+        }
+
+        .brush-size label {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .brush-size input {
+            width: 100px;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #333;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .brush-size input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .brush-size input::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .upload-section {
+            padding: 15px 20px;
+            background: #1a1a1a;
+            border-top: 2px solid #00ff00;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            flex: 1;
+            background: #333;
+            color: #fff;
+            padding: 16px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            touch-action: manipulation;
+        }
+
+        .upload-label:active {
+            background: #444;
+            transform: scale(0.98);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00ff00;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 5px;
+            background: #0f0f0f;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .mode-button {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            color: #888;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-button.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .style-panel {
+            display: none;
+        }
+
+        .style-panel.active {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0; /* Allow flex shrinking */
+            overflow: visible; /* Ensure controls are visible */
+        }
+        
+        /* Ensure freehand panel shows controls */
+        #freehandPanel.active {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        #freehandPanel.active #drawMode {
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0;
+        }
+        
+        /* Grid Paint UI - Exactly like original gridPaint.html */
+        .icon {
+            position: fixed;
+            cursor: pointer;
+            touch-action: manipulation; /* iPad: kein 300ms-Verzug, sofortiger Tap */
+            -webkit-tap-highlight-color: transparent;
+            border: 1px solid #ccc; /* Optional: damit man sie auf weiß besser sieht */
+            color: #000; /* Textfarbe Schwarz, da Hintergrund weiß */
+        }
+
+        
+        /* Hide grid controls when grid panel is hidden */
+        #gridControlsOverlay {
+            display: none !important;
+        }
+        
+        /* Show grid controls when grid panel is active (Overlay = eigene Touch-Schicht für iPad) */
+        body:has(#gridPanel:not(.hidden)) #gridControlsOverlay {
+            display: block !important;
+        }
+
+        /* Dot Paint panel - full screen like grid */
+        #dotPanel.grid-panel-container #dotCanvasContainer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        /* Hide dot controls when dot panel is hidden */
+        #dotBackBtn,
+        #dotReloadBtn,
+        #dotDownloadBtn,
+        #dotMinus,
+        #dotPlus,
+        #dotColorPalette {
+            display: none !important;
+        }
+        /* Show dot controls when dot panel is active */
+        body:has(#dotPanel:not(.hidden)) #dotBackBtn,
+        body:has(#dotPanel:not(.hidden)) #dotReloadBtn,
+        body:has(#dotPanel:not(.hidden)) #dotDownloadBtn,
+        body:has(#dotPanel:not(.hidden)) #dotMinus,
+        body:has(#dotPanel:not(.hidden)) #dotPlus,
+        body:has(#dotPanel:not(.hidden)) #dotColorPalette {
+            display: flex !important;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>UAV Drawing Interface</h1>
+        <div class="connection-status">
+            <span>Connected</span>
+            <span class="status-indicator" id="statusIndicator"></span>
+        </div>
+    </div>
+
+
+
+    <div class="main-content">
+        <div class="style-toggle">
+            <button class="style-button active" id="freehandBtn">Freehand</button>
+            <button class="style-button" id="gridBtn">Grid Paint</button>
+            <button class="style-button" id="dotBtn">Dot Paint</button>
+        </div>
+
+        <div class="mode-toggle" style="padding: 10px 20px; background: #1a1a1a;">
+            <button class="mode-button active" id="drawModeBtn">Draw</button>
+            <button class="mode-button" id="uploadModeBtn">Upload</button>
+        </div>
+
+        <!-- Freehand Drawing Panel -->
+        <div id="freehandPanel" class="style-panel active">
+            <div id="drawMode" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="canvas-container">
+                    <canvas id="drawingCanvas"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="color-picker">
+                        <div class="color-option active" data-color="#000000" style="background: #000;"></div>
+                        <div class="color-option" data-color="#ff0000" style="background: #ff0000;"></div>
+                        <div class="color-option" data-color="#00ff00" style="background: #00ff00;"></div>
+                        <div class="color-option" data-color="#0000ff" style="background: #0000ff;"></div>
+                        <div class="color-option" data-color="#ffff00" style="background: #ffff00;"></div>
+                        <div class="color-option" data-color="#ff00ff" style="background: #ff00ff;"></div>
+                    </div>
+                    <div class="brush-size">
+                        <label>Size:</label>
+                        <input type="range" id="brushSize" min="5" max="50" value="20">
+                    </div>
+                </div>
+            </div>
+
+            <div id="uploadMode" style="flex: 1; display: none; flex-direction: column; padding: 20px;">
+                <div class="upload-section">
+                    <input type="file" id="fileInput" accept="image/*">
+                    <label for="fileInput" class="upload-label">Choose Photo</label>
+                </div>
+                <div id="imagePreview" style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 20px;">
+                    <p style="color: #888; text-align: center;">Select an image to upload</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Grid Panel - Full Screen like Grid.html -->
+        <div id="gridPanel" class="grid-panel-container hidden">
+            <div id="gridCanvasContainer"></div>
+        </div>
+
+        <!-- Dot Paint Panel - Full Screen, same structure as Grid -->
+        <div id="dotPanel" class="grid-panel-container hidden">
+            <div id="dotCanvasContainer"></div>
+        </div>
+
+    <!-- Grid Controls - in Overlay-Wrapper für iPad (eigene Touch-Schicht über dem Canvas) -->
+    <div id="gridControlsOverlay" class="grid-control">
+        <div class="icon" id="gridBackBtn" style="width: 30px; height: 30px; top: 20px; left: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="switchStyle('freehand'); event.stopPropagation();" ontouchstart="switchStyle('freehand'); event.preventDefault(); event.stopPropagation();" draggable="false">←</div>
+        <div class="icon" id="gridReloadBtn" style="width: 30px; height: 30px; top: 20px; right: 60px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="gridReset(); event.stopPropagation();" ontouchstart="gridReset(); event.preventDefault(); event.stopPropagation();" draggable="false">↻</div>
+        <div class="icon" id="gridDownloadBtn" style="width: 30px; height: 30px; top: 20px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="gridSaveIMG(); event.stopPropagation();" ontouchstart="gridSaveIMG(); event.preventDefault(); event.stopPropagation();" draggable="false">↓</div>
+        <div class="icon" id="gridMinus" style="width: 30px; height: 30px; bottom: 30px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001;" draggable="false" onclick="gridSetSize('-'); event.stopPropagation();" ontouchstart="gridSetSize('-'); event.preventDefault(); event.stopPropagation();">−</div>
+        <div class="icon" id="gridPlus" style="width: 30px; height: 30px; bottom: 70px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001;" draggable="false" onclick="gridSetSize('+'); event.stopPropagation();" ontouchstart="gridSetSize('+'); event.preventDefault(); event.stopPropagation();">+</div>
+        <div id="gridColorPalette" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 90%; overflow-x: auto; z-index: 1000;" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+            <!-- Colors will be added dynamically -->
+        </div>
+    </div>
+
+    <!-- Dot Paint Controls - im Body nach den Panels -->
+    <div class="icon dot-control" id="dotBackBtn" style="width: 30px; height: 30px; top: 20px; left: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="switchStyle('freehand'); event.stopPropagation();" draggable="false">←</div>
+    <div class="icon dot-control" id="dotReloadBtn" style="width: 30px; height: 30px; top: 20px; right: 60px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="dotReset(); event.stopPropagation();" draggable="false">↻</div>
+    <div class="icon dot-control" id="dotDownloadBtn" style="width: 30px; height: 30px; top: 20px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="dotSaveIMG(); event.stopPropagation();" draggable="false">↓</div>
+    <div class="icon dot-control" id="dotMinus" style="width: 30px; height: 30px; bottom: 30px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001; pointer-events: auto;" draggable="false" onclick="dotSetSize('-'); event.stopPropagation();">−</div>
+    <div class="icon dot-control" id="dotPlus" style="width: 30px; height: 30px; bottom: 70px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001; pointer-events: auto;" draggable="false" onclick="dotSetSize('+'); event.stopPropagation();">+</div>
+    <div id="dotColorPalette" class="dot-control" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 90%; overflow-x: auto; z-index: 1000; pointer-events: auto;" onclick="event.stopPropagation();">
+        <!-- Colors added dynamically by dotSetupColorPalette() -->
+    </div>
+
+    <div class="controls" style="border-top: 2px solid #00ff00;">
+        <div class="button-group">
+            <button id="sendBtn">Send to Drone</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let ws = null;
+        let canvas, ctx;
+        let isDrawing = false;
+        let currentColor = '#000000';
+        let brushSize = 20;
+        let lastX = 0, lastY = 0;
+        let currentMode = 'draw';
+        let imageData = null;
+        let currentStyle = 'freehand';
+
+        function init() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            setupDrawing();
+            setupControls();
+            connectWebSocket();
+
+            // Style toggle
+            document.getElementById('freehandBtn').addEventListener('click', () => switchStyle('freehand'));
+            document.getElementById('gridBtn').addEventListener('click', () => switchStyle('grid'));
+            document.getElementById('dotBtn').addEventListener('click', () => switchStyle('dot'));
+
+            // Mode toggle
+            document.getElementById('drawModeBtn').addEventListener('click', () => switchMode('draw'));
+            document.getElementById('uploadModeBtn').addEventListener('click', () => switchMode('upload'));
+
+            // File upload
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            
+            // Ensure freehand panel and controls are visible on initial load
+            switchStyle('freehand');
+            switchMode('draw');
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                resizeCanvas();
+            }, 100);
+        });
+
+        function setupDrawing() {
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDraw);
+            canvas.addEventListener('mouseout', stopDraw);
+
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+            canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+        }
+
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            startDraw({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                target: { getBoundingClientRect: () => rect }
+            });
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            draw({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                target: { getBoundingClientRect: () => rect }
+            });
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            stopDraw();
+        }
+
+        function startDraw(e) {
+            if (currentMode !== 'draw' || currentStyle !== 'freehand') return;
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+        }
+
+        function draw(e) {
+            if (!isDrawing || currentMode !== 'draw' || currentStyle !== 'freehand') return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'drawing_stroke',
+                    data: {
+                        from: { x: lastX / canvas.width, y: lastY / canvas.height },
+                        to: { x: x / canvas.width, y: y / canvas.height },
+                        color: currentColor,
+                        size: brushSize / canvas.width
+                    }
+                }));
+            }
+
+            lastX = x;
+            lastY = y;
+        }
+
+        function stopDraw() {
+            if (isDrawing) {
+                isDrawing = false;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'drawing_end'
+                    }));
+                }
+            }
+        }
+
+
+        function setupControls() {
+            document.querySelectorAll('#freehandPanel .color-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    document.querySelectorAll('#freehandPanel .color-option').forEach(opt => opt.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentColor = e.target.dataset.color;
+                    ctx.strokeStyle = currentColor;
+                });
+            });
+
+            document.getElementById('brushSize').addEventListener('input', (e) => {
+                brushSize = parseInt(e.target.value);
+                ctx.lineWidth = brushSize;
+            });
+
+            document.getElementById('sendBtn').addEventListener('click', sendToServer);
+        }
+
+
+        function switchStyle(style) {
+            currentStyle = style;
+            const freehandPanel = document.getElementById('freehandPanel');
+            const gridPanel = document.getElementById('gridPanel');
+            const dotPanel = document.getElementById('dotPanel');
+            const freehandBtn = document.getElementById('freehandBtn');
+            const gridBtn = document.getElementById('gridBtn');
+            const dotBtn = document.getElementById('dotBtn');
+            const header = document.querySelector('.header');
+            const styleToggle = document.querySelector('.style-toggle');
+            const modeToggle = document.querySelector('.mode-toggle');
+            const bottomControls = document.querySelector('.main-content ~ .controls'); // Bottom controls (Clear/Send buttons)
+            const freehandControls = freehandPanel ? freehandPanel.querySelector('.controls') : null; // Color controls in freehand panel
+
+            // Reset all panels and buttons
+            freehandPanel.classList.remove('active');
+            gridPanel.classList.add('hidden');
+            if (dotPanel) dotPanel.classList.add('hidden');
+            freehandBtn.classList.remove('active');
+            gridBtn.classList.remove('active');
+            if (dotBtn) dotBtn.classList.remove('active');
+
+            if (style === 'freehand') {
+                freehandPanel.classList.add('active');
+                freehandBtn.classList.add('active');
+                if (header) header.style.display = 'flex';
+                if (styleToggle) styleToggle.style.display = 'flex';
+                if (modeToggle) modeToggle.style.display = 'flex';
+                // Show color controls in freehand panel
+                if (freehandControls) {
+                    freehandControls.style.display = 'flex';
+                    freehandControls.style.visibility = 'visible';
+                    freehandControls.style.opacity = '1';
+                }
+                // Show bottom controls (Clear/Send buttons)
+                if (bottomControls) bottomControls.style.display = 'flex';
+                
+                // Hide grid controls (CSS will handle this via body:has selector)
+            } else if (style === 'grid') {
+                gridPanel.classList.remove('hidden');
+                gridBtn.classList.add('active');
+                // Hide UI elements when grid is active
+                if (header) header.style.display = 'none';
+                if (styleToggle) styleToggle.style.display = 'none';
+                if (modeToggle) modeToggle.style.display = 'none';
+                if (bottomControls) bottomControls.style.display = 'none';
+                // Note: freehandControls are hidden automatically when freehandPanel is hidden
+                
+                // Ensure grid panel is visible
+                if (gridPanel) {
+                    gridPanel.style.display = 'block';
+                    gridPanel.style.visibility = 'visible';
+                }
+                // Grid controls are visible by default (display: flex in inline style), CSS hides them when panel is hidden
+            } else if (style === 'dot') {
+                if (dotPanel) {
+                    dotPanel.classList.remove('hidden');
+                    dotPanel.style.display = 'block';
+                    dotPanel.style.visibility = 'visible';
+                }
+                if (dotBtn) dotBtn.classList.add('active');
+                if (header) header.style.display = 'none';
+                if (styleToggle) styleToggle.style.display = 'none';
+                if (modeToggle) modeToggle.style.display = 'none';
+                if (bottomControls) bottomControls.style.display = 'none';
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const drawBtn = document.getElementById('drawModeBtn');
+            const uploadBtn = document.getElementById('uploadModeBtn');
+            const drawArea = document.getElementById('drawMode');
+            const uploadArea = document.getElementById('uploadMode');
+
+            if (mode === 'draw') {
+                drawBtn.classList.add('active');
+                uploadBtn.classList.remove('active');
+                if (drawArea) { drawArea.style.setProperty('display', 'flex', 'important'); }
+                if (uploadArea) { uploadArea.style.setProperty('display', 'none', 'important'); }
+            } else {
+                drawBtn.classList.remove('active');
+                uploadBtn.classList.add('active');
+                if (drawArea) { drawArea.style.setProperty('display', 'none', 'important'); }
+                if (uploadArea) { uploadArea.style.setProperty('display', 'flex', 'important'); }
+            }
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+                imageData = event.target.result;
+                showToast('Image loaded');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function sendToServer() {
+            let imageToSend = null;
+
+            if (currentMode === 'draw') {
+                if (currentStyle === 'freehand') {
+                    imageToSend = canvas.toDataURL('image/png');
+                } else if (currentStyle === 'dot') {
+                    if (typeof dotP5Instance !== 'undefined' && dotP5Instance && dotMainCanvas && dotDrawingLayer) {
+                        var exportGfx = dotP5Instance.createGraphics(dotMainCanvas.width, dotMainCanvas.height);
+                        exportGfx.background(255);
+                        exportGfx.image(dotDrawingLayer, 0, 0);
+                        imageToSend = exportGfx.elt.toDataURL('image/png');
+                        exportGfx.remove();
+                    } else {
+                        showToast('Please draw something first', 'error');
+                        return;
+                    }
+                } else {
+                    // Grid
+                    if (gridP5Canvas && gridP5Canvas.elt) {
+                        gridDisplay();
+                        imageToSend = gridP5Canvas.elt.toDataURL('image/png');
+                    } else {
+                        showToast('Please draw something first', 'error');
+                        return;
+                    }
+                }
+            } else if (currentMode === 'upload' && imageData) {
+                imageToSend = imageData;
+            } else {
+                showToast('Please draw something or upload an image', 'error');
+                return;
+            }
+
+            await sendImageToServer(imageToSend);
+        }
+
+        async function sendImageToServer(imageToSend) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'image_submit',
+                    image: imageToSend,
+                    style: currentStyle
+                }));
+                showToast('Sending to drone...');
+            } else {
+                try {
+                    const blob = await dataURLtoBlob(imageToSend);
+                    const formData = new FormData();
+                    formData.append('image', blob, 'drawing.png');
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast('Image sent successfully!');
+                    } else {
+                        showToast('Error: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    showToast('Error sending image', 'error');
+                }
+            }
+        }
+
+        function dataURLtoBlob(dataURL) {
+            return fetch(dataURL).then(res => res.blob());
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                document.getElementById('statusIndicator').classList.add('connected');
+                showToast('Connected');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'ack') {
+                        showToast('Image received by server');
+                    }
+                } catch (e) {
+                    // Ignore non-JSON messages
+                }
+            };
+            
+            ws.onerror = () => {
+                document.getElementById('statusIndicator').classList.remove('connected');
+            };
+            
+            ws.onclose = () => {
+                document.getElementById('statusIndicator').classList.remove('connected');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show';
+            if (type === 'error') {
+                toast.style.background = '#ff0000';
+            } else {
+                toast.style.background = '#00ff00';
+            }
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        init();
+    </script>
+    
+    <!-- Grid Paint Scripts -->
+    <script>
+        // Grid Paint Variables
+        var gridBgColor;
+        var gridImgDrawing;
+        var gridSizePreset = 75;
+        var gridSizeSteps = 25;
+        var gridSize;
+        var gridBrushColor;
+        var gridElementColor;
+        var gridRasterPoints = [];
+        var gridMagicNr = 0.553;
+        var gridXElements;
+        var gridYElements;
+        var gridP5Canvas = null;
+        var gridIsDrawing = false;
+        var gridLastMouseX = 0;
+        var gridLastMouseY = 0;
+        
+        // Color palette - 7 colors: White, Black, Red, Green, Blue, Yellow, Magenta
+       // Color palette: White (Eraser), Black, Red, Green, Blue, Yellow, Magenta
+       var gridColorPalette = [
+        [255, 255, 255], // Index 0: Weiß (Radierer)
+        [0, 0, 0],       // Index 1: Schwarz (Echte Farbe)
+        [255, 0, 0],     // Index 2: Rot
+        [0, 255, 0],     // Index 3: Grün
+        [0, 0, 255],     // Index 4: Blau
+        [255, 255, 0],   // Index 5: Gelb
+        [255, 0, 255]    // Index 6: Magenta
+        ];
+        var gridCurrentColorIndex = 0;
+        
+        // RasterPoint Class - uses p5.js functions
+        class RasterPoint {
+          constructor(x, y) {
+            var p = window.gridP5Instance;
+            if (!p) return;
+            this.position = p.createVector(x, y);
+            this.onOff = [];
+            for (var i=0; i<=2; i++) {
+              this.onOff[i] = [];
+            }
+            this.threshold = 50;
+            this.elementSize = p.ceil(gridSize/2);
+          }
+
+          update(tempScreen, factor) {
+            var p = window.gridP5Instance;
+            if (!p) return;
+            for (var y=-1; y<=1; y++) {
+              for (var x=-1; x<=1; x++) {
+                var pointColor = tempScreen.get(p.int((this.position.x+(gridSize*x))/factor), p.int((this.position.y+(gridSize*y))/factor));
+                if (p.brightness(pointColor) >= this.threshold) {
+                  this.onOff[x+1][y+1] = true;
+                } else {
+                  this.onOff[x+1][y+1] = false;
+                }
+              }
+            }
+          }
+
+          display() {
+            var p = window.gridP5Instance;
+            if (!p) return;
+            this.elementSize = gridSize/2;
+            p.push();
+            p.ellipseMode(p.CENTER);
+            p.translate(this.position.x, this.position.y);
+            p.strokeWeight(2);
+            p.stroke(gridElementColor);
+            p.fill(gridElementColor);
+
+            if (this.onOff[1][1]) {
+              if (this.onOff[2][1] || this.onOff[2][2] || this.onOff[1][2]) {
+                this.element0();
+              } else {
+                this.element1();
+              }
+              p.rotate(p.radians(90));
+              if (this.onOff[0][1] || this.onOff[0][2] || this.onOff[1][2]) {
+                this.element0();
+              } else {
+                this.element1();
+              }
+              p.rotate(p.radians(90));
+              if (this.onOff[0][1] || this.onOff[0][0] || this.onOff[1][0]) {
+                this.element0();
+              } else {
+                this.element1();
+              }
+              p.rotate(p.radians(90));
+              if (this.onOff[1][0] || this.onOff[2][0] || this.onOff[2][1]) {
+                this.element0();
+              } else {
+                this.element1();
+              }
+            } else {
+              if (this.onOff[2][1] && this.onOff[1][2]) {
+                this.element2();
+              }
+              p.rotate(p.radians(90));
+              if (this.onOff[1][2] && this.onOff[0][1]) {
+                this.element2();
+              }
+              p.rotate(p.radians(90));
+              if (this.onOff[0][1] && this.onOff[1][0]) {
+                this.element2();
+              }
+              p.rotate(p.radians(90));
+              if (this.onOff[1][0] && this.onOff[2][1]) {
+                this.element2();
+              }
+            }
+            p.pop();
+          }
+
+          element0() {
+            var p = window.gridP5Instance;
+            if (!p) return;
+            p.rect(0, 0, this.elementSize, this.elementSize);
+          }
+
+          element1() {
+            var p = window.gridP5Instance;
+            if (!p) return;
+            p.beginShape();
+            p.vertex(0, 0);
+            p.vertex(this.elementSize, 0);
+            p.bezierVertex(this.elementSize, this.elementSize*gridMagicNr, this.elementSize*gridMagicNr, this.elementSize, 0, this.elementSize);
+            p.endShape(p.CLOSE);
+          }
+
+          element2() {
+            var p = window.gridP5Instance;
+            if (!p) return;
+            p.beginShape();
+            p.vertex(this.elementSize, 0);
+            p.bezierVertex(this.elementSize, this.elementSize*gridMagicNr, this.elementSize*gridMagicNr, this.elementSize, 0, this.elementSize);
+            p.vertex(this.elementSize, this.elementSize);
+            p.endShape(p.CLOSE);
+          }
+        }
+        
+        // Grid Paint p5.js Functions - wrapped in namespace to avoid conflicts
+        var gridP5Sketch = function(p) {
+          p.preload = function() {
+            gridBgColor = p.color(255);
+            gridBrushColor = p.color(255);
+            gridElementColor = p.color(0);
+          };
+          
+          p.setup = function() {
+            var container = document.getElementById('gridCanvasContainer');
+            if (!container) return;
+            gridP5Canvas = p.createCanvas(container.clientWidth, container.clientHeight);
+            p.pixelDensity(2);
+            
+            // Reset gridSizePreset if it was modified
+            gridSizePreset = 75;
+            gridSizeSteps = 25;
+            if (isTouchDevice()) {
+              gridSizePreset *= 0.5;
+              gridSizeSteps *= 0.5;
+            }
+            gridSize = gridSizePreset;
+            
+            // Initialize drawing surface
+            gridImgDrawing = p.createGraphics(p.width, p.height);
+            gridImgDrawing.background(0);
+            
+            p.imageMode(p.CENTER);
+            gridSetupColorPalette();
+            gridCreateRasterPoints();
+            
+            // Set initial color (white is eraser, so don't change element color)
+            gridCurrentColorIndex = 0;
+            var c = gridColorPalette[0];
+            gridBrushColor = p.color(c[0], c[1], c[2]);
+            // Don't set gridElementColor for white - keep it as default (black) so eraser works correctly
+            // gridElementColor stays as initialized in preload (color(0) = black)
+            
+            gridP5Canvas.elt.style.touchAction = 'none';
+            gridP5Canvas.elt.style.pointerEvents = 'auto';
+          };
+          
+          p.draw = function() {
+            gridDisplay();
+          };
+          
+          p.mousePressed = function() {
+            gridMousePressed();
+          };
+          
+          p.mouseDragged = function() {
+            gridMouseDragged();
+          };
+          
+          p.mouseReleased = function() {
+            gridMouseReleased();
+          };
+          
+          p.touchStarted = function() {
+            return gridTouchStarted();
+          };
+          
+          p.touchMoved = function() {
+            return gridTouchMoved();
+          };
+          
+          p.touchEnded = function() {
+            return gridTouchEnded();
+          };
+          
+          p.windowResized = function() {
+            if (gridP5Canvas) {
+              var container = document.getElementById('gridCanvasContainer');
+              if (container) {
+                p.resizeCanvas(container.clientWidth, container.clientHeight);
+                // Reset gridSizePreset
+                gridSizePreset = 75;
+                gridSizeSteps = 25;
+                if (isTouchDevice()) {
+                  gridSizePreset *= 0.5;
+                  gridSizeSteps *= 0.5;
+                }
+                gridSize = gridSizePreset;
+                gridResizeImages();
+              }
+            }
+          };
+          
+          // Store p5 instance globally for helper functions
+          window.gridP5Instance = p;
+        };
+        
+        var gridP5Instance = null;
+        
+        function gridDisplay() {
+          if (!gridP5Canvas || !gridImgDrawing || !gridP5Instance) return;
+          var p = gridP5Instance;
+          p.image(gridImgDrawing, p.width / 2, p.height / 2);
+          gridUpdateRasterPoints();
+          p.background(gridBgColor);
+          gridDisplayRasterPoints();
+        }
+        
+        function gridMousePressed() {
+          if (!gridP5Canvas) return;
+          var p = gridP5Instance;
+          if (p.mouseX > p.width - 205 && p.mouseY < 70) return;
+          var palette = document.getElementById('gridColorPalette');
+          if (palette) {
+            var rect = palette.getBoundingClientRect();
+            var canvasRect = gridP5Canvas.elt.getBoundingClientRect();
+            var paletteX = rect.left - canvasRect.left;
+            var paletteY = rect.top - canvasRect.top;
+            if (p.mouseX >= paletteX && p.mouseX <= paletteX + rect.width && p.mouseY >= paletteY && p.mouseY <= paletteY + rect.height) {
+              return;
+            }
+          }
+          if (p.mouseX > p.width - 70 && p.mouseY > p.height - 260) return;
+          
+          gridIsDrawing = true;
+          gridLastMouseX = p.mouseX;
+          gridLastMouseY = p.mouseY;
+          gridDrawImg(p.mouseX, p.mouseY, p.mouseX, p.mouseY);
+        }
+        
+        function gridMouseDragged() {
+          if (!gridIsDrawing || !gridP5Canvas) return;
+          var p = gridP5Instance;
+          if (p.mouseX > p.width - 205 && p.mouseY < 70) return;
+          if (p.mouseX > p.width - 70 && p.mouseY > p.height - 260) return;
+          
+          gridDrawImg(p.mouseX, p.mouseY, gridLastMouseX, gridLastMouseY);
+          gridLastMouseX = p.mouseX;
+          gridLastMouseY = p.mouseY;
+        }
+        
+        function gridMouseReleased() {
+          gridIsDrawing = false;
+        }
+        
+        function gridTouchStarted() {
+          if (!gridP5Canvas) return false;
+          var p = gridP5Instance;
+          if (p.touches.length > 0) {
+            var touch = p.touches[0];
+            p.mouseX = touch.x;
+            p.mouseY = touch.y;
+            p.pmouseX = touch.x;
+            p.pmouseY = touch.y;
+            
+            /* Button-Zonen: Touch nicht als Zeichnen verarbeiten (wichtig für iPad) */
+            if (p.mouseX < 70 && p.mouseY < 70) return false;   /* Back (oben links) */
+            if (p.mouseX > p.width - 205 && p.mouseY < 70) return false;  /* Reload, Download (oben rechts) */
+            if (p.mouseX > p.width - 70 && p.mouseY > p.height - 260) return false;  /* +, − (unten rechts) */
+            var palette = document.getElementById('gridColorPalette');
+            if (palette) {
+              var rect = palette.getBoundingClientRect();
+              var canvasRect = gridP5Canvas.elt.getBoundingClientRect();
+              var paletteX = rect.left - canvasRect.left;
+              var paletteY = rect.top - canvasRect.top;
+              if (p.mouseX >= paletteX && p.mouseX <= paletteX + rect.width && p.mouseY >= paletteY && p.mouseY <= paletteY + rect.height) {
+                return false;
+              }
+            }
+            
+            gridIsDrawing = true;
+            gridLastMouseX = p.mouseX;
+            gridLastMouseY = p.mouseY;
+            gridDrawImg(p.mouseX, p.mouseY, p.mouseX, p.mouseY);
+          }
+          return false;
+        }
+        
+        function gridTouchMoved() {
+          if (!gridIsDrawing || !gridP5Canvas) return false;
+          var p = gridP5Instance;
+          if (p.touches.length > 0) {
+            var touch = p.touches[0];
+            p.mouseX = touch.x;
+            p.mouseY = touch.y;
+            
+            if (p.mouseX < 70 && p.mouseY < 70) return false;
+            if (p.mouseX > p.width - 205 && p.mouseY < 70) return false;
+            if (p.mouseX > p.width - 70 && p.mouseY > p.height - 260) return false;
+            
+            gridDrawImg(p.mouseX, p.mouseY, gridLastMouseX, gridLastMouseY);
+            gridLastMouseX = p.mouseX;
+            gridLastMouseY = p.mouseY;
+          }
+          return false;
+        }
+        
+        function gridTouchEnded() {
+          gridIsDrawing = false;
+          return false;
+        }
+        
+function gridDrawImg(x, y, px, py) {
+  if (gridImgDrawing == null || !gridP5Canvas || !gridP5Instance) return;
+  var p = gridP5Instance;
+  
+  // INTERNE LOGIK:
+  // Wir zeichnen auf gridImgDrawing. 
+  // Weißes Licht (255) dort lässt das Raster erscheinen.
+  // Schwarz (0) dort lässt das Raster verschwinden (Löschen).
+
+  if (gridCurrentColorIndex === 0) {
+    // WEISS ausgewählt -> Wir zeichnen SCHWARZ auf die Maske zum Löschen
+    gridImgDrawing.stroke(0); 
+  } else {
+    // JEDE ANDERE FARBE -> Wir zeichnen WEISS auf die Maske zum Malen
+    gridImgDrawing.stroke(255); 
+  }
+
+  gridImgDrawing.strokeWeight(gridSize);
+  gridImgDrawing.noFill();
+  
+  if (px == x && py == y) {
+    gridImgDrawing.point(x, y);
+  } else {
+    gridImgDrawing.line(x, y, px, py);
+  }
+  
+  // Senden an Drohne/Server mit der ECHTEN Farbe
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    let c = gridColorPalette[gridCurrentColorIndex];
+    ws.send(JSON.stringify({
+      type: 'drawing_stroke',
+      data: {
+        from: { x: px / p.width, y: py / p.height },
+        to: { x: x / p.width, y: y / p.height },
+        color: 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')',
+        size: gridSize / p.width
+      }
+    }));
+  }
+}
+        
+function gridSetColor(index) {
+  if (!gridP5Instance) return;
+  var p = gridP5Instance;
+  
+  gridCurrentColorIndex = index;
+  var c = gridColorPalette[index];
+  
+  // Wenn nicht Weiß (Radierer) gewählt ist, aktualisiere die Sichtfarbe
+  if (index !== 0) {
+    gridElementColor = p.color(c[0], c[1], c[2]);
+    gridBrushColor = p.color(c[0], c[1], c[2]);
+  }
+  // Wenn Index 0 (Weiß) gewählt ist, bleibt gridElementColor auf der alten Farbe,
+  // damit das bestehende Bild nicht flackert oder die Farbe wechselt.
+
+  // UI-Update der Palette
+  var palette = document.getElementById('gridColorPalette');
+  if (palette) {
+    var children = palette.children;
+    for (var i = 0; i < children.length; i++) {
+      if (i === index) {
+        children[i].classList.add('active');
+      } else {
+        children[i].classList.remove('active');
+      }
+    }
+  }
+}
+        
+        function gridSetSize(val) {
+          if (!gridP5Instance) return;
+          var p = gridP5Instance;
+          var gridSizeMin = 5;
+          var gridSizeMax = 200;
+
+          if (val == "+") {
+            gridSize += gridSizeSteps;
+          } else if (val == "-") {
+            gridSize -= gridSizeSteps;
+          }
+          gridSize = p.constrain(gridSize, gridSizeMin, gridSizeMax);
+
+          if (gridSize == gridSizeMin) {
+            document.getElementById("gridMinus").style.opacity = "0.3";
+          } else if (gridSize == gridSizeMax) {
+            document.getElementById("gridPlus").style.opacity = "0.3";
+          } else {
+            document.getElementById("gridMinus").style.opacity = "1.0";
+            document.getElementById("gridPlus").style.opacity = "1.0";
+          }
+
+          gridCreateRasterPoints();
+        }
+        
+        function gridCreateRasterPoints() {
+          if (!gridP5Canvas || !gridP5Instance) return;
+          var p = gridP5Instance;
+          gridRasterPoints = [];
+          gridXElements = p.floor(p.width / gridSize) + 2;
+          gridYElements = p.floor(p.height / gridSize) + 2;
+          for (var x = 0; x < gridXElements; x++) {
+            gridRasterPoints[x] = [];
+            for (var y = 0; y < gridYElements; y++) {
+              var xPos = x * gridSize + ((p.width - (gridSize * gridXElements)) / 2) + (gridSize / 2);
+              var yPos = y * gridSize + ((p.height - (gridSize * gridYElements)) / 2) + (gridSize / 2);
+              gridRasterPoints[x][y] = new RasterPoint(xPos, yPos);
+            }
+          }
+        }
+        
+        function gridUpdateRasterPoints() {
+          if (!gridP5Canvas || !gridP5Instance) return;
+          var p = gridP5Instance;
+          var tempScreen = p.get(0, 0, p.width, p.height);
+          tempScreen.resize(p.int(p.width / gridSize) * 4, p.int(p.height / gridSize) * 4);
+          var factor = p.width / tempScreen.width;
+
+          for (var x = 0; x < gridXElements; x++) {
+            for (var y = 0; y < gridYElements; y++) {
+              gridRasterPoints[x][y].update(tempScreen, factor);
+            }
+          }
+        }
+        
+        function gridDisplayRasterPoints() {
+          for (var x = 0; x < gridXElements; x++) {
+            for (var y = 0; y < gridYElements; y++) {
+              gridRasterPoints[x][y].display();
+            }
+          }
+        }
+        
+        function gridReset() {
+          if (!gridP5Instance) return;
+          var p = gridP5Instance;
+          
+          if (gridImgDrawing != null) {
+            gridImgDrawing.background(0);
+          } else {
+            gridImgDrawing = p.createGraphics(p.width, p.height);
+            gridImgDrawing.background(0);
+          }
+
+          gridCurrentColorIndex = 0;
+          var c = gridColorPalette[0];
+          gridBrushColor = p.color(c[0], c[1], c[2]);
+          // Don't set gridElementColor for white - keep it as default so eraser works correctly
+          // gridElementColor stays as initialized (color(0) = black)
+          
+          var palette = document.getElementById('gridColorPalette');
+          if (palette) {
+            var children = palette.children;
+            for (var i = 0; i < children.length; i++) {
+              if (i === 0) {
+                children[i].classList.add('active');
+              } else {
+                children[i].classList.remove('active');
+              }
+            }
+          }
+          
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'grid_clear'
+            }));
+          }
+        }
+        
+        function gridResizeImages() {
+          if (!gridP5Canvas || !gridP5Instance) return;
+          var p = gridP5Instance;
+          if (gridImgDrawing != null && gridImgDrawing.width > 0 && gridImgDrawing.height > 0) {
+            var imgDrawingTemp = p.createGraphics(p.windowWidth, p.windowHeight);
+            var factor;
+            if (p.windowWidth > gridImgDrawing.width || p.windowHeight > gridImgDrawing.height) {
+              factor = p.max([(p.windowWidth / gridImgDrawing.width), (p.windowHeight / gridImgDrawing.height)]);
+            } else {
+              factor = p.min([(p.windowWidth / gridImgDrawing.width), (p.windowHeight / gridImgDrawing.height)]);
+            }
+            imgDrawingTemp.background(0);
+            imgDrawingTemp.imageMode(p.CENTER);
+            imgDrawingTemp.image(gridImgDrawing, imgDrawingTemp.width / 2, imgDrawingTemp.height / 2, gridImgDrawing.width * factor, gridImgDrawing.height * factor);
+            imgDrawingTemp.imageMode(p.CORNER);
+            gridImgDrawing.remove();
+            gridImgDrawing = null;
+            gridImgDrawing = imgDrawingTemp;
+            imgDrawingTemp.remove();
+            imgDrawingTemp = null;
+            gridSetSize(factor);
+          } else {
+            gridImgDrawing = p.createGraphics(p.width, p.height);
+            gridImgDrawing.background(0);
+          }
+          gridCreateRasterPoints();
+        }
+        
+        function gridSaveIMG() {
+          if (!gridP5Canvas || !gridP5Instance) return;
+          var p = gridP5Instance;
+          gridDisplay();
+          
+          // Create filename with timestamp
+          var now = new Date();
+          var year = now.getFullYear();
+          var month = String(now.getMonth() + 1).padStart(2, '0');
+          var day = String(now.getDate()).padStart(2, '0');
+          var hour = String(now.getHours()).padStart(2, '0');
+          var minute = String(now.getMinutes()).padStart(2, '0');
+          var second = String(now.getSeconds()).padStart(2, '0');
+          var millis = String(now.getMilliseconds()).padStart(3, '0');
+          var filename = "IMG_" + year + '-' + month + '-' + day + '_' + hour + '-' + minute + '-' + second + '_' + millis + ".png";
+          
+          // Use p5.js save function to download the image
+          p.save(gridP5Canvas, filename);
+          
+          // Also try to send to server if WebSocket is available
+          try {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              var canvasData = gridP5Canvas.elt.toDataURL('image/png');
+              ws.send(JSON.stringify({
+                type: 'image_submit',
+                image: canvasData,
+                style: 'grid'
+              }));
+            }
+          } catch (e) {
+            // Ignore if WebSocket is not available
+          }
+        }
+        
+        function gridSetupColorPalette() {
+          var palette = document.getElementById('gridColorPalette');
+          if (!palette) return;
+          palette.innerHTML = '';
+          
+          for (var i = 0; i < gridColorPalette.length; i++) {
+            var colorDiv = document.createElement('div');
+            colorDiv.className = 'grid-color-icon';
+            if (i === gridCurrentColorIndex) {
+              colorDiv.classList.add('active');
+            }
+            colorDiv.style.width = '35px';
+            colorDiv.style.height = '35px';
+            colorDiv.style.backgroundColor = 'rgb(' + gridColorPalette[i][0] + ',' + gridColorPalette[i][1] + ',' + gridColorPalette[i][2] + ')';
+            colorDiv.onclick = (function(index) {
+              return function(e) {
+                e.stopPropagation();
+                gridSetColor(index);
+              };
+            })(i);
+            colorDiv.ontouchstart = (function(index) {
+              return function(e) {
+                e.stopPropagation();
+                gridSetColor(index);
+              };
+            })(i);
+            palette.appendChild(colorDiv);
+          }
+        }
+        
+        function isTouchDevice() {
+          return (
+            'ontouchstart' in window ||
+            navigator.maxTouchPoints > 0 ||
+            navigator.msMaxTouchPoints > 0
+          );
+        }
+
+        // ============================================
+        // DOT PAINT LOGIC – nur einzelne Punkte (wie Screenshot), keine Calligraphy-Linien
+        // ============================================
+        var dotDrawingLayer;
+        var dotFollowerX, dotFollowerY;
+        var dotLastDotX, dotLastDotY;  // letzter Punkt, um Abstand für nächsten Dot zu prüfen
+        var dotIsFirstStroke = true;
+        var dotTotalLength = 200;     // Größeneinstellung → wird zu Dot-Durchmesser (Pixel)
+        var dotFollowerActive = false;
+        var dotBgColor;
+        var dotParentContainer;
+        var dotMainCanvas;
+        var dotP5Instance = null;
+        var dotP5Canvas = null;
+        var dotColorPalette = [
+          [255, 255, 255], [0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255]
+        ];
+        var dotCurrentColorIndex = 1;
+        var dotP5Sketch = function(p) {
+          p.setup = function() {
+            dotParentContainer = document.getElementById('dotCanvasContainer');
+            if (!dotParentContainer) return;
+            dotMainCanvas = p.createCanvas(dotParentContainer.clientWidth, dotParentContainer.clientHeight);
+            p.pixelDensity(2);
+            dotBgColor = p.color(255, 255, 255);
+            dotDrawingLayer = p.createGraphics(p.width, p.height);
+            dotDrawingLayer.pixelDensity(2);
+            dotDrawingLayer.background(255, 0);
+            p.background(dotBgColor);
+            dotFollowerX = p.width / 2;
+            dotFollowerY = p.height / 2;
+            dotLastDotX = dotFollowerX;
+            dotLastDotY = dotFollowerY;
+            dotSetupColorPalette();
+            dotSetColor(dotCurrentColorIndex);
+            dotMainCanvas.elt.style.touchAction = 'none';
+            dotMainCanvas.elt.style.pointerEvents = 'auto';
+          };
+          p.draw = function() {
+            if (dotParentContainer && p.width != dotParentContainer.clientWidth) p.windowResized();
+            p.background(dotBgColor);
+            p.image(dotDrawingLayer, 0, 0, p.width, p.height);
+            var targetX = p.mouseX, targetY = p.mouseY;
+            if (p.touches.length > 0) {
+              targetX = p.touches[0].x;
+              targetY = p.touches[0].y;
+              dotFollowerActive = true;
+            } else if (p.mouseIsPressed) {
+              dotFollowerActive = true;
+            } else {
+              dotFollowerActive = false;
+              dotIsFirstStroke = true;
+            }
+            dotFollowerX = targetX;
+            dotFollowerY = targetY;
+            var dotDiameter = p.constrain(dotTotalLength / 4, 6, 100);
+            var dotSpacing = dotDiameter * 0.7;
+            if (dotFollowerActive) {
+              var overUI = dotIsPointerOverUI(p, dotFollowerX, dotFollowerY);
+              if (!overUI) {
+                var distFromLast = p.dist(dotLastDotX, dotLastDotY, dotFollowerX, dotFollowerY);
+                if (dotIsFirstStroke || distFromLast >= dotSpacing) {
+                  dotDrawOneDot(dotDrawingLayer, dotFollowerX, dotFollowerY, dotDiameter, p);
+                  dotLastDotX = dotFollowerX;
+                  dotLastDotY = dotFollowerY;
+                  dotIsFirstStroke = false;
+                }
+              }
+            } else {
+              dotLastDotX = dotFollowerX;
+              dotLastDotY = dotFollowerY;
+            }
+          };
+          p.windowResized = function() {
+            if (!dotParentContainer) return;
+            p.resizeCanvas(dotParentContainer.clientWidth, dotParentContainer.clientHeight);
+            var temp = p.createGraphics(p.width, p.height);
+            temp.image(dotDrawingLayer, 0, 0);
+            dotDrawingLayer = p.createGraphics(p.width, p.height);
+            dotDrawingLayer.pixelDensity(2);
+            dotDrawingLayer.image(temp, 0, 0);
+            temp.remove();
+          };
+          window.dotP5Instance = p;
+          dotP5Canvas = dotMainCanvas;
+        };
+        function dotIsPointerOverUI(p, canvasX, canvasY) {
+          if (!dotMainCanvas || !dotMainCanvas.elt) return false;
+          var el = dotMainCanvas.elt;
+          var rect = el.getBoundingClientRect();
+          var scaleX = rect.width / p.width;
+          var scaleY = rect.height / p.height;
+          var clientX = rect.left + canvasX * scaleX;
+          var clientY = rect.top + canvasY * scaleY;
+          var hit = document.elementFromPoint(clientX, clientY);
+          if (!hit) return false;
+          var ids = ['dotBackBtn', 'dotReloadBtn', 'dotDownloadBtn', 'dotMinus', 'dotPlus', 'dotColorPalette'];
+          for (var i = 0; i < ids.length; i++) {
+            if (hit.id === ids[i] || hit.closest('#' + ids[i])) return true;
+          }
+          if (hit.closest('.icon')) return true;
+          return false;
+        }
+        function dotDrawOneDot(target, x, y, diameter, p) {
+          if (dotCurrentColorIndex === 0) target.erase(); else target.noErase();
+          target.noStroke();
+          target.fill(dotColorPalette[dotCurrentColorIndex][0], dotColorPalette[dotCurrentColorIndex][1], dotColorPalette[dotCurrentColorIndex][2]);
+          target.circle(x, y, diameter);
+          if (dotCurrentColorIndex === 0) target.noErase();
+        }
+        function dotSetColor(index) {
+          if (!dotP5Instance) return;
+          dotCurrentColorIndex = index;
+          var palette = document.getElementById('dotColorPalette');
+          if (palette) {
+            for (var i = 0; i < palette.children.length; i++) {
+              if (i === index) {
+                palette.children[i].classList.add('active');
+                palette.children[i].style.border = '3px solid #000';
+              } else {
+                palette.children[i].classList.remove('active');
+                palette.children[i].style.border = '2px solid rgba(0,0,0,0.3)';
+              }
+            }
+          }
+        }
+        function dotSetSize(val) {
+          if (!dotP5Instance) return;
+          var minSize = 50, maxSize = 600;
+          if (val === '+') dotTotalLength += 50; else if (val === '-') dotTotalLength -= 50;
+          dotTotalLength = dotP5Instance.constrain(dotTotalLength, minSize, maxSize);
+        }
+        function dotReset() {
+          if (!dotP5Instance || !dotDrawingLayer) return;
+          dotDrawingLayer.clear();
+          dotSetColor(1);
+        }
+        function dotSaveIMG() {
+          if (!dotP5Instance) return;
+          dotP5Instance.save(dotMainCanvas, 'DOT_' + Date.now() + '.png');
+        }
+        function dotSetupColorPalette() {
+          var palette = document.getElementById('dotColorPalette');
+          if (!palette) return;
+          palette.innerHTML = '';
+          for (var i = 0; i < dotColorPalette.length; i++) {
+            var colorDiv = document.createElement('div');
+            colorDiv.className = 'grid-color-icon';
+            if (i === dotCurrentColorIndex) { colorDiv.classList.add('active'); colorDiv.style.border = '3px solid #000'; }
+            colorDiv.style.width = '35px';
+            colorDiv.style.height = '35px';
+            colorDiv.style.backgroundColor = 'rgb(' + dotColorPalette[i][0] + ',' + dotColorPalette[i][1] + ',' + dotColorPalette[i][2] + ')';
+            colorDiv.onclick = (function(idx) { return function(e) { e.stopPropagation(); dotSetColor(idx); }; })(i);
+            colorDiv.ontouchstart = (function(idx) { return function(e) { e.stopPropagation(); dotSetColor(idx); }; })(i);
+            palette.appendChild(colorDiv);
+          }
+        }
+
+        // SwitchStyle Override: p5-Instanzen nur bei Bedarf erstellen/entfernen, UI bleibt sichtbar
+        const originalSwitchStyle = switchStyle;
+        switchStyle = function(style) {
+          originalSwitchStyle(style);
+          
+          if (style === 'grid') {
+            if (dotP5Instance) { try { dotP5Instance.remove(); } catch(e) {} dotP5Instance = null; dotP5Canvas = null; dotDrawingLayer = null; }
+            setTimeout(function() {
+              if (!gridP5Instance) {
+                var container = document.getElementById('gridCanvasContainer');
+                if (container && typeof p5 !== 'undefined') gridP5Instance = new p5(gridP5Sketch, container);
+              }
+            }, 150);
+          } else if (style === 'dot') {
+            if (gridP5Instance) { try { gridP5Instance.remove(); } catch(e) {} gridP5Instance = null; gridP5Canvas = null; }
+            setTimeout(function() {
+              if (!dotP5Instance) {
+                var container = document.getElementById('dotCanvasContainer');
+                if (container && typeof p5 !== 'undefined') dotP5Instance = new p5(dotP5Sketch, container);
+              }
+            }, 150);
+          } else {
+            if (gridP5Instance) { try { gridP5Instance.remove(); } catch(e) {} gridP5Instance = null; gridP5Canvas = null; }
+            if (dotP5Instance) { try { dotP5Instance.remove(); } catch(e) {} dotP5Instance = null; dotP5Canvas = null; dotDrawingLayer = null; }
+          }
+        };
+    </script>
+</body>
+</html>
