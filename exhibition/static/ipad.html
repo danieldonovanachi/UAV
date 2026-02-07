@@ -18,98 +18,306 @@
             user-select: none;
         }
 
+        html {
+            height: 100%;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #000;
-            color: #fff;
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
             overflow: hidden;
-            height: 100vh;
-            height: 100dvh;
             display: flex;
             flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+            height: 100%;
         }
 
-        .header {
+        .ipad-header {
             background: #1a1a1a;
-            padding: 15px 20px;
-            border-bottom: 2px solid #00ff00;
+            padding: 16px 18px;
+            border: 2px solid #00ff00;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
         }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: #00ff00;
+        .ipad-header h1 {
+            font-size: 22px;
+            text-shadow: 0 0 10px #00ff00;
         }
-
         .status-indicator {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: #ff0000;
-            box-shadow: 0 0 10px #ff0000;
-            margin-left: 10px;
+            box-shadow: 0 0 8px #ff0000;
         }
-
         .status-indicator.connected {
             background: #00ff00;
-            box-shadow: 0 0 10px #00ff00;
+            box-shadow: 0 0 8px #00ff00;
         }
 
-        .main-content {
-            flex: 1;
+        /* Main view: home screen with log, sim buttons, D&C.UAV.V1 - fill full height */
+        #mainView {
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-        }
-        
-        /* When grid panel is active, hide other content */
-        body:has(#gridPanel:not(.hidden)) .header,
-        body:has(#gridPanel:not(.hidden)) .style-toggle,
-        body:has(#gridPanel:not(.hidden)) .mode-toggle,
-        body:has(#gridPanel:not(.hidden)) #freehandPanel,
-        body:has(#gridPanel:not(.hidden)) .controls {
-            display: none !important;
-            pointer-events: none !important;
-        }
-        /* When dot panel is active, hide other content */
-        body:has(#dotPanel:not(.hidden)) .header,
-        body:has(#dotPanel:not(.hidden)) .style-toggle,
-        body:has(#dotPanel:not(.hidden)) .mode-toggle,
-        body:has(#dotPanel:not(.hidden)) #freehandPanel,
-        body:has(#dotPanel:not(.hidden)) .controls {
-            display: none !important;
-            pointer-events: none !important;
-        }
-
-        .style-toggle {
-            display: flex;
-            gap: 5px;
-            background: #0f0f0f;
-            padding: 5px;
-            border-radius: 8px;
-            margin: 10px 20px;
-        }
-
-        .style-button {
             flex: 1;
-            padding: 10px 16px;
-            background: transparent;
-            color: #888;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            min-height: 0;
+            padding: 16px;
         }
-
-        .style-button.active {
+        #mainView.hidden {
+            display: none !important;
+        }
+        .drawing-entry-btn {
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 18px 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+        .drawing-entry-btn:active {
             background: #00ff00;
             color: #000;
+        }
+        .ipad-log-row {
+            display: flex;
+            gap: 16px;
+            flex: 1 1 0;
+            min-height: 180px;
+            margin-bottom: 16px;
+        }
+        .ipad-log {
+            font-size: 14px;
+            flex: 1 1 0;
+            min-height: 0;
+            overflow-y: auto;
+            background: #0a0a0a;
+            padding: 16px;
+            border: 1px solid #333;
+        }
+        .ipad-last-upload {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 55%;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+        .ipad-last-upload-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .ipad-last-upload-img-wrap {
+            flex: 1;
+            min-height: 100px;
+            aspect-ratio: 4/3;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ipad-last-upload-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .ipad-log .log-entry { margin-bottom: 5px; color: #00ff00; }
+        .ipad-log .log-entry.error { color: #ff0000; }
+        .ipad-log .log-entry.warning { color: #ffaa00; }
+        .sim-buttons {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+        .sim-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 18px 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .sim-btn:active {
+            background: #00ff00;
+            color: #000;
+        }
+        /* D&C.UAV.V1 panel - same as website */
+        .drone-status-panel {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            flex-shrink: 0;
+            min-height: 220px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+        }
+        .drone-status-panel .drone-image-wrap {
+            flex-shrink: 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+        .drone-status-panel .drone-image-wrap img {
+            display: block;
+            max-width: 140px;
+            max-height: 140px;
+            object-fit: contain;
+        }
+        .drone-status-panel .drone-status-content { flex: 1; min-width: 0; }
+        .drone-status-panel .title {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #00ff00;
+            margin-bottom: 16px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .drone-status-panel .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+        }
+        .drone-status-panel .metric:last-child { border-bottom: none; }
+        .drone-status-panel .metric-label { color: #888; }
+        .drone-status-panel .metric-value {
+            color: #00ff00;
+            font-weight: bold;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        /* Drawing view: canvas + Mode button */
+        #drawingView {
+            display: none;
+            flex-direction: column;
+            position: fixed;
+            inset: 0;
+            background: #0a0a0a;
+            z-index: 50;
+        }
+        #drawingView.active {
+            display: flex;
+        }
+        #drawingView .canvas-slot {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            background: #fff;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+        /* Freehand canvas: fill slot and get reliable size */
+        #freehandPanel .canvas-container,
+        #freehandCanvasWrap {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #drawingCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            pointer-events: auto;
+        }
+        .mode-btn-floating {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            padding: 12px 20px;
+            background: #00ff00;
+            color: #000;
+            border: 2px solid #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 1002;
+            touch-action: manipulation;
+        }
+        .mode-btn-floating:active { background: #00ff88; }
+        /* Mode popup */
+        .mode-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 2147483647;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .mode-modal.show { display: flex; }
+        body.mode-modal-open #gridControlsOverlay { z-index: 99998 !important; }
+        .mode-modal .modal-inner {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 280px;
+            width: 100%;
+            text-align: center;
+        }
+        .mode-modal .modal-title {
+            color: #00ff00;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .mode-modal .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .mode-modal .modal-btn {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #333;
+            color: #00ff00;
+        }
+        .mode-modal .modal-btn:active { background: #00ff00; color: #000; }
+
+        /* When grid panel is active (inside drawing view), hide freehand/dot */
+        body:has(#gridPanel:not(.hidden)) #freehandPanel,
+        body:has(#gridPanel:not(.hidden)) #dotPanel {
+            display: none !important;
+        }
+        body:has(#dotPanel:not(.hidden)) #freehandPanel,
+        body:has(#dotPanel:not(.hidden)) #gridPanel {
+            display: none !important;
         }
 
         .canvas-container {
@@ -463,6 +671,65 @@
             opacity: 1;
         }
 
+        .upload-mode-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2147483647;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .upload-mode-modal.show {
+            display: flex;
+        }
+        /* When modal is open, put grid overlay below it so Lines/Dots are tappable on Grid Paint */
+        body.upload-modal-open #gridControlsOverlay {
+            z-index: 99998 !important;
+        }
+        .upload-mode-modal .modal-inner {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 320px;
+            width: 100%;
+            text-align: center;
+        }
+        .upload-mode-modal .modal-title {
+            color: #00ff00;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .upload-mode-modal .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .upload-mode-modal .modal-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #333;
+            color: #fff;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .upload-mode-modal .modal-btn:active {
+            background: #00ff00;
+            color: #000;
+        }
+
         .mode-toggle {
             display: flex;
             gap: 5px;
@@ -524,15 +791,24 @@
         }
 
         
+        /* Hide all canvas overlays on landing (main view) */
+        body:not(.ipad-drawing-view) #gridControlsOverlay,
+        body:not(.ipad-drawing-view) .dot-control,
+        body:not(.ipad-drawing-view) #freehandControlsOverlay,
+        body:not(.ipad-drawing-view) #drawingChrome {
+            display: none !important;
+        }
         /* Hide grid controls when grid panel is hidden */
         #gridControlsOverlay {
             display: none !important;
         }
-        
-        /* Show grid controls when grid panel is active (Overlay = eigene Touch-Schicht für iPad) */
-        body:has(#gridPanel:not(.hidden)) #gridControlsOverlay {
+        /* Show grid controls when drawing view active AND grid panel is active */
+        body.ipad-drawing-view:has(#gridPanel:not(.hidden)) #gridControlsOverlay {
             display: block !important;
         }
+        /* Back + Mode above grid/dot overlays so Mode is always tappable */
+        body.ipad-drawing-view #gridControlsOverlay { z-index: 1000; }
+        body.ipad-drawing-view .dot-control { z-index: 1000; }
 
         /* Dot Paint panel - full screen like grid */
         #dotPanel.grid-panel-container #dotCanvasContainer {
@@ -543,6 +819,7 @@
         }
         /* Hide dot controls when dot panel is hidden */
         #dotBackBtn,
+        #dotModeBtn,
         #dotReloadBtn,
         #dotDownloadBtn,
         #dotMinus,
@@ -550,90 +827,125 @@
         #dotColorPalette {
             display: none !important;
         }
-        /* Show dot controls when dot panel is active */
-        body:has(#dotPanel:not(.hidden)) #dotBackBtn,
-        body:has(#dotPanel:not(.hidden)) #dotReloadBtn,
-        body:has(#dotPanel:not(.hidden)) #dotDownloadBtn,
-        body:has(#dotPanel:not(.hidden)) #dotMinus,
-        body:has(#dotPanel:not(.hidden)) #dotPlus,
-        body:has(#dotPanel:not(.hidden)) #dotColorPalette {
+        /* Show dot controls when drawing view active AND dot panel is active */
+        body.ipad-drawing-view:has(#dotPanel:not(.hidden)) #dotBackBtn,
+        body.ipad-drawing-view:has(#dotPanel:not(.hidden)) #dotModeBtn,
+        body.ipad-drawing-view:has(#dotPanel:not(.hidden)) #dotReloadBtn,
+        body.ipad-drawing-view:has(#dotPanel:not(.hidden)) #dotDownloadBtn,
+        body.ipad-drawing-view:has(#dotPanel:not(.hidden)) #dotMinus,
+        body.ipad-drawing-view:has(#dotPanel:not(.hidden)) #dotPlus,
+        body.ipad-drawing-view:has(#dotPanel:not(.hidden)) #dotColorPalette {
             display: flex !important;
         }
 
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>UAV Drawing Interface</h1>
-        <div class="connection-status">
-            <span>Connected</span>
-            <span class="status-indicator" id="statusIndicator"></span>
-        </div>
+    <!-- Main view: home with Drawing button, log, sim buttons, D&C.UAV.V1 -->
+    <div class="ipad-header">
+        <h1>UAV [UNARMEDARTVEHICLE]</h1>
+        <span class="status-indicator" id="statusIndicator"></span>
     </div>
-
-
-
-    <div class="main-content">
-        <div class="style-toggle">
-            <button class="style-button active" id="freehandBtn">Freehand</button>
-            <button class="style-button" id="gridBtn">Grid Paint</button>
-            <button class="style-button" id="dotBtn">Dot Paint</button>
-        </div>
-
-        <div class="mode-toggle" style="padding: 10px 20px; background: #1a1a1a;">
-            <button class="mode-button active" id="drawModeBtn">Draw</button>
-            <button class="mode-button" id="uploadModeBtn">Upload</button>
-        </div>
-
-        <!-- Freehand Drawing Panel -->
-        <div id="freehandPanel" class="style-panel active">
-            <div id="drawMode" style="flex: 1; display: flex; flex-direction: column;">
-                <div class="canvas-container">
-                    <canvas id="drawingCanvas"></canvas>
-                </div>
-                <div class="controls">
-                    <div class="color-picker">
-                        <div class="color-option active" data-color="#000000" style="background: #000;"></div>
-                        <div class="color-option" data-color="#ff0000" style="background: #ff0000;"></div>
-                        <div class="color-option" data-color="#00ff00" style="background: #00ff00;"></div>
-                        <div class="color-option" data-color="#0000ff" style="background: #0000ff;"></div>
-                        <div class="color-option" data-color="#ffff00" style="background: #ffff00;"></div>
-                        <div class="color-option" data-color="#ff00ff" style="background: #ff00ff;"></div>
-                    </div>
-                    <div class="brush-size">
-                        <label>Size:</label>
-                        <input type="range" id="brushSize" min="5" max="50" value="20">
-                    </div>
+    <div id="mainView">
+        <button type="button" class="drawing-entry-btn" id="goToDrawingBtn" onclick="goToDrawingView(); return false;" ontouchstart="event.preventDefault(); goToDrawingView(); return false;">Drawing</button>
+        <div class="ipad-log-row">
+            <div class="ipad-log" id="ipadLog"></div>
+            <div class="ipad-last-upload" id="ipadLastUploadBox">
+                <div class="ipad-last-upload-label">Last uploaded</div>
+                <div class="ipad-last-upload-img-wrap" id="ipadLastUploadWrap">
+                    <img id="ipadLastUploadImg" src="" alt="Last upload" style="display:none;">
                 </div>
             </div>
-
-            <div id="uploadMode" style="flex: 1; display: none; flex-direction: column; padding: 20px;">
-                <div class="upload-section">
-                    <input type="file" id="fileInput" accept="image/*">
-                    <label for="fileInput" class="upload-label">Choose Photo</label>
+        </div>
+        <div class="sim-buttons">
+            <button type="button" class="sim-btn" id="planFlightBtn" onclick="sendSignal('plan_flight');" ontouchstart="event.preventDefault(); sendSignal('plan_flight');">Plan Flight</button>
+            <button type="button" class="sim-btn" id="startSimBtn" onclick="sendSignal('start_simulation');" ontouchstart="event.preventDefault(); sendSignal('start_simulation');">Start Simulation</button>
+            <button type="button" class="sim-btn" id="stopSimBtn" onclick="sendSignal('stop_simulation');" ontouchstart="event.preventDefault(); sendSignal('stop_simulation');">Stop Simulation</button>
+        </div>
+        <div class="drone-status-panel">
+            <div class="drone-image-wrap">
+                <img src="/static/drone.png" alt="D&C UAV V1">
+            </div>
+            <div class="drone-status-content">
+                <div class="title">D&C.UAV.V1</div>
+                <div class="metric">
+                    <span class="metric-label">Battery</span>
+                    <span class="metric-value" id="droneBattery">--%</span>
                 </div>
-                <div id="imagePreview" style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 20px;">
-                    <p style="color: #888; text-align: center;">Select an image to upload</p>
+                <div class="metric">
+                    <span class="metric-label">Range</span>
+                    <span class="metric-value" id="droneRange">-- km</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Fly Time</span>
+                    <span class="metric-value" id="droneFlyTime">-- min</span>
                 </div>
             </div>
         </div>
     </div>
 
-        <!-- Grid Panel - Full Screen like Grid.html -->
-        <div id="gridPanel" class="grid-panel-container hidden">
-            <div id="gridCanvasContainer"></div>
+    <!-- Drawing view: one canvas slot + Mode button -->
+    <div id="drawingView">
+        <div class="canvas-slot">
+            <!-- Freehand: only canvas, full-screen white (same look as grid/dot) -->
+            <div id="freehandPanel" class="style-panel active" style="position:absolute;inset:0;">
+                <div id="freehandCanvasWrap" class="canvas-container" style="position:absolute;inset:0;">
+                    <canvas id="drawingCanvas" style="display:block;width:100%;height:100%;touch-action:none;"></canvas>
+                </div>
+            </div>
+            <!-- Grid Panel -->
+            <div id="gridPanel" class="grid-panel-container hidden" style="position:absolute;inset:0;">
+                <div id="gridCanvasContainer" style="position:absolute;inset:0;"></div>
+            </div>
+            <!-- Dot Panel -->
+            <div id="dotPanel" class="grid-panel-container hidden" style="position:absolute;inset:0;">
+                <div id="dotCanvasContainer" style="position:absolute;inset:0;"></div>
+            </div>
         </div>
+    </div>
 
-        <!-- Dot Paint Panel - Full Screen, same structure as Grid -->
-        <div id="dotPanel" class="grid-panel-container hidden">
-            <div id="dotCanvasContainer"></div>
+    <!-- Back + Mode always on top when drawing view is active -->
+    <div id="drawingChrome" style="display:none;position:fixed;inset:0;pointer-events:none;z-index:2147483648;">
+        <div class="icon" id="drawingBackBtn" style="position:fixed;top:20px;left:20px;width:30px;height:30px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;cursor:pointer;pointer-events:auto;border:1px solid #ccc;color:#000;" onclick="goToMainView();" draggable="false">←</div>
+        <button type="button" class="mode-btn-floating" id="modePopupBtn" style="position:fixed;bottom:20px;left:20px;background:white;border:1px solid #ccc;color:#000;border-radius:4px;padding:8px 14px;font-size:14px;font-weight:bold;pointer-events:auto;">Mode</button>
+    </div>
+
+    <!-- Freehand controls overlay (same style as grid: white buttons on white canvas) -->
+    <div id="freehandControlsOverlay" style="display:none;position:fixed;inset:0;pointer-events:none;z-index:1001;">
+        <div class="icon" style="position:fixed;top:20px;right:100px;width:30px;height:30px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;pointer-events:auto;border:1px solid #ccc;color:#000;cursor:pointer;" onclick="freehandClear();" title="Clear">↻</div>
+        <div class="icon" style="position:fixed;top:20px;right:20px;min-width:70px;height:30px;padding:0 10px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;pointer-events:auto;border:1px solid #ccc;color:#000;cursor:pointer;" onclick="sendToServer();" title="Send to Drone">Upload</div>
+        <div class="icon" style="position:fixed;bottom:30px;right:20px;width:30px;height:30px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;pointer-events:auto;border:1px solid #ccc;color:#000;cursor:pointer;" onclick="brushSizeDown();">−</div>
+        <div class="icon" style="position:fixed;bottom:70px;right:20px;width:30px;height:30px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;pointer-events:auto;border:1px solid #ccc;color:#000;cursor:pointer;" onclick="brushSizeUp();">+</div>
+        <div id="freehandColorPalette" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;flex-direction:row;gap:8px;padding:10px;background:rgba(255,255,255,0.95);border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,0.2);max-width:90%;overflow-x:auto;pointer-events:auto;z-index:1000;">
+            <div class="grid-color-icon freehand-color active" data-color="#000000" style="width:35px;height:35px;background:#000;border-radius:50%;border:3px solid #000;cursor:pointer;"></div>
+            <div class="grid-color-icon freehand-color" data-color="#ff0000" style="width:35px;height:35px;background:#ff0000;border-radius:50%;border:2px solid rgba(0,0,0,0.3);cursor:pointer;"></div>
+            <div class="grid-color-icon freehand-color" data-color="#00ff00" style="width:35px;height:35px;background:#00ff00;border-radius:50%;border:2px solid rgba(0,0,0,0.3);cursor:pointer;"></div>
+            <div class="grid-color-icon freehand-color" data-color="#0000ff" style="width:35px;height:35px;background:#0000ff;border-radius:50%;border:2px solid rgba(0,0,0,0.3);cursor:pointer;"></div>
+            <div class="grid-color-icon freehand-color" data-color="#ffff00" style="width:35px;height:35px;background:#ffff00;border-radius:50%;border:2px solid rgba(0,0,0,0.3);cursor:pointer;"></div>
+            <div class="grid-color-icon freehand-color" data-color="#ff00ff" style="width:35px;height:35px;background:#ff00ff;border-radius:50%;border:2px solid rgba(0,0,0,0.3);cursor:pointer;"></div>
         </div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+    <div id="imagePreview" style="display:none;"></div>
+
+    <!-- Mode popup: Freehand / Grid / Dots -->
+    <div class="mode-modal" id="modeModal">
+        <div class="modal-inner">
+            <div class="modal-title">Choose drawing mode</div>
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn" id="modeFreehandBtn">Freehand</button>
+                <button type="button" class="modal-btn" id="modeGridBtn">Grid</button>
+                <button type="button" class="modal-btn" id="modeDotsBtn">Dots</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Grid Controls - in Overlay-Wrapper für iPad (eigene Touch-Schicht über dem Canvas) -->
     <div id="gridControlsOverlay" class="grid-control">
-        <div class="icon" id="gridBackBtn" style="width: 30px; height: 30px; top: 20px; left: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="switchStyle('freehand'); event.stopPropagation();" ontouchstart="switchStyle('freehand'); event.preventDefault(); event.stopPropagation();" draggable="false">←</div>
-        <div class="icon" id="gridReloadBtn" style="width: 30px; height: 30px; top: 20px; right: 60px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="gridReset(); event.stopPropagation();" ontouchstart="gridReset(); event.preventDefault(); event.stopPropagation();" draggable="false">↻</div>
-        <div class="icon" id="gridDownloadBtn" style="width: 30px; height: 30px; top: 20px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="gridSaveIMG(); event.stopPropagation();" ontouchstart="gridSaveIMG(); event.preventDefault(); event.stopPropagation();" draggable="false">↓</div>
+        <div class="icon" id="gridBackBtn" style="width: 30px; height: 30px; top: 20px; left: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="goToMainView(); event.stopPropagation();" ontouchstart="goToMainView(); event.preventDefault(); event.stopPropagation();" draggable="false">←</div>
+        <button type="button" class="icon mode-btn-in-overlay" id="gridModeBtn" style="bottom: 20px; left: 20px; min-width: 70px; height: 30px; padding: 0 12px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; z-index: 1001;" onclick="document.body.classList.add('mode-modal-open'); document.getElementById('modeModal').classList.add('show'); event.stopPropagation();" ontouchstart="event.preventDefault(); document.body.classList.add('mode-modal-open'); document.getElementById('modeModal').classList.add('show');">Mode</button>
+        <div class="icon" id="gridReloadBtn" style="width: 30px; height: 30px; top: 20px; right: 100px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001;" onclick="gridReset(); event.stopPropagation();" ontouchstart="gridReset(); event.preventDefault(); event.stopPropagation();" draggable="false">↻</div>
+        <div class="icon" id="gridDownloadBtn" style="min-width: 70px; height: 30px; top: 20px; right: 20px; padding: 0 10px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; z-index: 1001;" onclick="gridUploadIMG(); event.stopPropagation();" ontouchstart="gridUploadIMG(); event.preventDefault(); event.stopPropagation();" draggable="false">Upload</div>
         <div class="icon" id="gridMinus" style="width: 30px; height: 30px; bottom: 30px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001;" draggable="false" onclick="gridSetSize('-'); event.stopPropagation();" ontouchstart="gridSetSize('-'); event.preventDefault(); event.stopPropagation();">−</div>
         <div class="icon" id="gridPlus" style="width: 30px; height: 30px; bottom: 70px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001;" draggable="false" onclick="gridSetSize('+'); event.stopPropagation();" ontouchstart="gridSetSize('+'); event.preventDefault(); event.stopPropagation();">+</div>
         <div id="gridColorPalette" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 90%; overflow-x: auto; z-index: 1000;" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
@@ -642,22 +954,27 @@
     </div>
 
     <!-- Dot Paint Controls - im Body nach den Panels -->
-    <div class="icon dot-control" id="dotBackBtn" style="width: 30px; height: 30px; top: 20px; left: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="switchStyle('freehand'); event.stopPropagation();" draggable="false">←</div>
-    <div class="icon dot-control" id="dotReloadBtn" style="width: 30px; height: 30px; top: 20px; right: 60px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="dotReset(); event.stopPropagation();" draggable="false">↻</div>
-    <div class="icon dot-control" id="dotDownloadBtn" style="width: 30px; height: 30px; top: 20px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="dotSaveIMG(); event.stopPropagation();" draggable="false">↓</div>
+    <div class="icon dot-control" id="dotBackBtn" style="width: 30px; height: 30px; top: 20px; left: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="goToMainView(); event.stopPropagation();" draggable="false">←</div>
+    <button type="button" class="icon dot-control mode-btn-in-overlay" id="dotModeBtn" style="bottom: 20px; left: 20px; min-width: 70px; height: 30px; padding: 0 12px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="document.body.classList.add('mode-modal-open'); document.getElementById('modeModal').classList.add('show'); event.stopPropagation();">Mode</button>
+    <div class="icon dot-control" id="dotReloadBtn" style="width: 30px; height: 30px; top: 20px; right: 100px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="dotReset(); event.stopPropagation();" draggable="false">↻</div>
+    <div class="icon dot-control" id="dotDownloadBtn" style="min-width: 70px; height: 30px; top: 20px; right: 20px; padding: 0 10px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="dotUploadIMG(); event.stopPropagation();" draggable="false">Upload</div>
     <div class="icon dot-control" id="dotMinus" style="width: 30px; height: 30px; bottom: 30px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001; pointer-events: auto;" draggable="false" onclick="dotSetSize('-'); event.stopPropagation();">−</div>
     <div class="icon dot-control" id="dotPlus" style="width: 30px; height: 30px; bottom: 70px; right: 20px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001; pointer-events: auto;" draggable="false" onclick="dotSetSize('+'); event.stopPropagation();">+</div>
     <div id="dotColorPalette" class="dot-control" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 90%; overflow-x: auto; z-index: 1000; pointer-events: auto;" onclick="event.stopPropagation();">
         <!-- Colors added dynamically by dotSetupColorPalette() -->
     </div>
 
-    <div class="controls" style="border-top: 2px solid #00ff00;">
-        <div class="button-group">
-            <button id="sendBtn">Send to Drone</button>
+    <div class="toast" id="toast"></div>
+
+    <div class="upload-mode-modal" id="uploadModeModal">
+        <div class="modal-inner">
+            <div class="modal-title">Choose style for this upload</div>
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn" id="modalLinesBtn">Lines</button>
+                <button type="button" class="modal-btn" id="modalDotsBtn">Dots</button>
+            </div>
         </div>
     </div>
-
-    <div class="toast" id="toast"></div>
 
     <script>
         let ws = null;
@@ -669,245 +986,362 @@
         let currentMode = 'draw';
         let imageData = null;
         let currentStyle = 'freehand';
+        let pendingUploadCallback = null; // function(mode) called when user picks Lines or Dots in modal
 
         function init() {
             canvas = document.getElementById('drawingCanvas');
             ctx = canvas.getContext('2d');
-            
             resizeCanvas();
             setupDrawing();
             setupControls();
             connectWebSocket();
+            startDroneStatusUpdates();
+            fetchLastUpload();
+            fetchServerLogs();
+            setInterval(fetchServerLogs, 3000);
 
-            // Style toggle
-            document.getElementById('freehandBtn').addEventListener('click', () => switchStyle('freehand'));
-            document.getElementById('gridBtn').addEventListener('click', () => switchStyle('grid'));
-            document.getElementById('dotBtn').addEventListener('click', () => switchStyle('dot'));
+            document.getElementById('goToDrawingBtn').addEventListener('click', goToDrawingView);
 
-            // Mode toggle
-            document.getElementById('drawModeBtn').addEventListener('click', () => switchMode('draw'));
-            document.getElementById('uploadModeBtn').addEventListener('click', () => switchMode('upload'));
+            document.getElementById('modePopupBtn').addEventListener('click', function() {
+                document.body.classList.add('mode-modal-open');
+                document.getElementById('modeModal').classList.add('show');
+            });
+            function chooseMode(mode, e) {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                setDrawingMode(mode);
+            }
+            document.getElementById('modeFreehandBtn').addEventListener('click', function(e) { chooseMode('freehand', e); });
+            document.getElementById('modeGridBtn').addEventListener('click', function(e) { chooseMode('grid', e); });
+            document.getElementById('modeDotsBtn').addEventListener('click', function(e) { chooseMode('dot', e); });
+            document.getElementById('modeFreehandBtn').addEventListener('touchend', function(e) { chooseMode('freehand', e); }, { passive: false });
+            document.getElementById('modeGridBtn').addEventListener('touchend', function(e) { chooseMode('grid', e); }, { passive: false });
+            document.getElementById('modeDotsBtn').addEventListener('touchend', function(e) { chooseMode('dot', e); }, { passive: false });
+            document.getElementById('modeModal').addEventListener('click', function(e) {
+                if (e.target === this) { document.getElementById('modeModal').classList.remove('show'); document.body.classList.remove('mode-modal-open'); }
+            });
+            document.getElementById('modeModal').addEventListener('touchend', function(e) {
+                if (e.target === this) { e.preventDefault(); document.getElementById('modeModal').classList.remove('show'); document.body.classList.remove('mode-modal-open'); }
+            }, { passive: false });
 
-            // File upload
             document.getElementById('fileInput').addEventListener('change', handleFileUpload);
-            
-            // Ensure freehand panel and controls are visible on initial load
+
+            var modalLines = document.getElementById('modalLinesBtn');
+            var modalDots = document.getElementById('modalDotsBtn');
+            function modalChooseLines(e) { if (e) { e.preventDefault(); e.stopPropagation(); } confirmUploadMode('lines'); }
+            function modalChooseDots(e) { if (e) { e.preventDefault(); e.stopPropagation(); } confirmUploadMode('dots'); }
+            modalLines.addEventListener('click', modalChooseLines);
+            modalDots.addEventListener('click', modalChooseDots);
+            modalLines.addEventListener('touchend', function(e) { e.preventDefault(); modalChooseLines(); }, { passive: false });
+            modalDots.addEventListener('touchend', function(e) { e.preventDefault(); modalChooseDots(); }, { passive: false });
+            document.getElementById('uploadModeModal').addEventListener('click', function(e) {
+                if (e.target === this) hideUploadModeModal();
+            });
+            document.getElementById('uploadModeModal').addEventListener('touchend', function(e) {
+                if (e.target === this) { e.preventDefault(); hideUploadModeModal(); }
+            }, { passive: false });
+
             switchStyle('freehand');
             switchMode('draw');
         }
 
+        function goToMainView() {
+            document.body.classList.remove('ipad-drawing-view');
+            var main = document.getElementById('mainView');
+            var draw = document.getElementById('drawingView');
+            var chrome = document.getElementById('drawingChrome');
+            if (main) { main.classList.remove('hidden'); main.style.display = ''; }
+            if (draw) { draw.classList.remove('active'); draw.style.display = 'none'; draw.style.position = ''; draw.style.inset = ''; draw.style.background = ''; draw.style.zIndex = ''; }
+            if (chrome) chrome.style.display = 'none';
+        }
+
+        function goToDrawingView() {
+            var main = document.getElementById('mainView');
+            var draw = document.getElementById('drawingView');
+            if (main) { main.classList.add('hidden'); main.style.display = 'none'; }
+            document.body.classList.add('ipad-drawing-view');
+            if (draw) {
+                draw.classList.add('active');
+                draw.style.display = 'flex';
+                draw.style.flexDirection = 'column';
+                draw.style.position = 'fixed';
+                draw.style.inset = '0';
+                draw.style.background = '#0a0a0a';
+                draw.style.zIndex = '50';
+            }
+            switchStyle(currentStyle);
+            var chrome = document.getElementById('drawingChrome');
+            if (chrome) chrome.style.display = (currentStyle === 'freehand') ? 'block' : 'none';
+            if (typeof scheduleResizeCanvas === 'function') {
+                setTimeout(scheduleResizeCanvas, 0);
+                setTimeout(scheduleResizeCanvas, 200);
+            }
+        }
+
+        function setDrawingMode(mode) {
+            document.getElementById('modeModal').classList.remove('show');
+            document.body.classList.remove('mode-modal-open');
+            switchStyle(mode);
+        }
+
+        function startDroneStatusUpdates() {
+            function randomInRange(min, max, decimals) {
+                var v = min + Math.random() * (max - min);
+                return decimals === 0 ? Math.round(v) : Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals);
+            }
+            function update() {
+                var b = document.getElementById('droneBattery');
+                var r = document.getElementById('droneRange');
+                var f = document.getElementById('droneFlyTime');
+                if (b) b.textContent = randomInRange(20, 95, 0) + '%';
+                if (r) r.textContent = randomInRange(0.5, 8, 1) + ' km';
+                if (f) f.textContent = randomInRange(5, 28, 0) + ' min';
+            }
+            update();
+            setInterval(update, 4000);
+        }
+
+        var serverLogCount = 0;
+        function fetchServerLogs() {
+            fetch('/api/logs').then(function(r) { return r.json(); }).then(function(data) {
+                if (!data || !Array.isArray(data.logs)) return;
+                var logs = data.logs;
+                if (logs.length <= serverLogCount) return;
+                for (var i = serverLogCount; i < logs.length; i++) {
+                    ipadLog(logs[i], 'info');
+                }
+                serverLogCount = logs.length;
+            }).catch(function() {});
+        }
+        function ipadLog(message, type) {
+            var logEl = document.getElementById('ipadLog');
+            if (!logEl) return;
+            var entry = document.createElement('div');
+            entry.className = 'log-entry ' + (type || '');
+            entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function sendSignal(action) {
+            try {
+                var resp = await fetch('/api/signal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: action })
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    ipadLog(action.replace('_', ' ') + ' sent', 'info');
+                    showToast(data.action || action);
+                } else {
+                    ipadLog('Error: ' + (data.error || 'unknown'), 'error');
+                    showToast(data.error || 'Error', 'error');
+                }
+            } catch (err) {
+                ipadLog('Failed to send signal', 'error');
+                showToast('Failed to send signal', 'error');
+            }
+        }
+
+        var freehandLogicalWidth = 0;
+        var freehandLogicalHeight = 0;
+
         function resizeCanvas() {
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-            
+            if (!canvas || !ctx) return;
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            if (document.getElementById('drawingView') && document.getElementById('drawingView').classList.contains('active')) {
+                w = Math.max(1, w);
+                h = Math.max(1, h);
+            } else {
+                var container = document.getElementById('freehandCanvasWrap') || canvas.parentElement;
+                if (container) {
+                    w = Math.max(1, container.clientWidth || window.innerWidth);
+                    h = Math.max(1, container.clientHeight || window.innerHeight);
+                }
+            }
+            freehandLogicalWidth = w;
+            freehandLogicalHeight = h;
+            if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w;
+                canvas.height = h;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, w, h);
+            }
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = currentColor;
             ctx.lineWidth = brushSize;
         }
 
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-        });
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => {
-                resizeCanvas();
-            }, 100);
-        });
+        function scheduleResizeCanvas() {
+            if (typeof requestAnimationFrame !== 'undefined') {
+                requestAnimationFrame(function() { resizeCanvas(); });
+            }
+            setTimeout(resizeCanvas, 50);
+            setTimeout(resizeCanvas, 300);
+        }
+
+        window.addEventListener('resize', function() { scheduleResizeCanvas(); });
+        window.addEventListener('orientationchange', function() { setTimeout(scheduleResizeCanvas, 150); });
+
+        function getPointerCoords(e) {
+            if (e.clientX != null) return { x: e.clientX, y: e.clientY };
+            if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            return null;
+        }
 
         function setupDrawing() {
-            canvas.addEventListener('mousedown', startDraw);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDraw);
-            canvas.addEventListener('mouseout', stopDraw);
-
-            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-            canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-        }
-
-
-        function handleTouchStart(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            startDraw({
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                target: { getBoundingClientRect: () => rect }
-            });
-        }
-
-        function handleTouchMove(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            draw({
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                target: { getBoundingClientRect: () => rect }
-            });
-        }
-
-        function handleTouchEnd(e) {
-            e.preventDefault();
-            stopDraw();
-        }
-
-        function startDraw(e) {
-            if (currentMode !== 'draw' || currentStyle !== 'freehand') return;
-            isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            lastX = e.clientX - rect.left;
-            lastY = e.clientY - rect.top;
-        }
-
-        function draw(e) {
-            if (!isDrawing || currentMode !== 'draw' || currentStyle !== 'freehand') return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'drawing_stroke',
-                    data: {
-                        from: { x: lastX / canvas.width, y: lastY / canvas.height },
-                        to: { x: x / canvas.width, y: y / canvas.height },
-                        color: currentColor,
-                        size: brushSize / canvas.width
-                    }
-                }));
+            function toCanvas(px, py) {
+                var r = canvas.getBoundingClientRect();
+                if (r.width <= 0 || r.height <= 0) return { x: 0, y: 0 };
+                return {
+                    x: (px - r.left) * (canvas.width / r.width),
+                    y: (py - r.top) * (canvas.height / r.height)
+                };
             }
-
-            lastX = x;
-            lastY = y;
-        }
-
-        function stopDraw() {
-            if (isDrawing) {
-                isDrawing = false;
-                if (ws && ws.readyState === WebSocket.OPEN) {
+            function onPointerDown(e) {
+                if (currentStyle !== 'freehand' || e.target !== canvas) return;
+                e.preventDefault();
+                var coords = getPointerCoords(e) || (e.clientX != null ? { x: e.clientX, y: e.clientY } : null);
+                if (!coords) return;
+                var p = toCanvas(coords.x, coords.y);
+                isDrawing = true;
+                lastX = p.x;
+                lastY = p.y;
+            }
+            function onPointerMove(e) {
+                if (!isDrawing || currentStyle !== 'freehand') return;
+                e.preventDefault();
+                var coords = getPointerCoords(e) || (e.clientX != null ? { x: e.clientX, y: e.clientY } : null);
+                if (!coords) return;
+                var p = toCanvas(coords.x, coords.y);
+                var x = p.x, y = p.y;
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                if (ws && ws.readyState === WebSocket.OPEN && freehandLogicalWidth > 0) {
                     ws.send(JSON.stringify({
-                        type: 'drawing_end'
+                        type: 'drawing_stroke',
+                        data: {
+                            from: { x: lastX / freehandLogicalWidth, y: lastY / freehandLogicalHeight },
+                            to: { x: x / freehandLogicalWidth, y: y / freehandLogicalHeight },
+                            color: currentColor,
+                            size: brushSize / freehandLogicalWidth
+                        }
                     }));
                 }
+                lastX = x;
+                lastY = y;
             }
+            function onPointerUp(e) {
+                if (e.target !== canvas && !isDrawing) return;
+                e.preventDefault();
+                if (isDrawing) {
+                    isDrawing = false;
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: 'drawing_end' }));
+                    }
+                }
+            }
+            canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+            canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+            canvas.addEventListener('pointerup', onPointerUp, { passive: false });
+            canvas.addEventListener('pointerleave', onPointerUp, { passive: false });
+            canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
+            canvas.addEventListener('mousedown', onPointerDown, { passive: false });
+            canvas.addEventListener('mousemove', onPointerMove, { passive: false });
+            canvas.addEventListener('mouseup', onPointerUp, { passive: false });
+            canvas.addEventListener('mouseleave', onPointerUp, { passive: false });
+            canvas.addEventListener('touchstart', function(e) {
+                if (e.target === canvas) e.preventDefault();
+                if (e.touches[0]) onPointerDown({ preventDefault: function(){}, clientX: e.touches[0].clientX, clientY: e.touches[0].clientY, target: canvas });
+            }, { passive: false });
+            canvas.addEventListener('touchmove', function(e) {
+                if (e.target === canvas) e.preventDefault();
+                if (e.touches[0]) onPointerMove({ preventDefault: function(){}, clientX: e.touches[0].clientX, clientY: e.touches[0].clientY, target: canvas });
+            }, { passive: false });
+            canvas.addEventListener('touchend', function(e) { e.preventDefault(); onPointerUp({ target: canvas }); }, { passive: false });
+            canvas.addEventListener('touchcancel', function(e) { e.preventDefault(); onPointerUp({ target: canvas }); }, { passive: false });
         }
 
 
         function setupControls() {
-            document.querySelectorAll('#freehandPanel .color-option').forEach(option => {
+            document.querySelectorAll('#freehandColorPalette .freehand-color').forEach(option => {
                 option.addEventListener('click', (e) => {
-                    document.querySelectorAll('#freehandPanel .color-option').forEach(opt => opt.classList.remove('active'));
-                    e.target.classList.add('active');
-                    currentColor = e.target.dataset.color;
+                    var el = e.target.closest('.freehand-color');
+                    if (!el) return;
+                    document.querySelectorAll('#freehandColorPalette .freehand-color').forEach(opt => opt.classList.remove('active'));
+                    el.classList.add('active');
+                    currentColor = el.dataset.color || '#000000';
                     ctx.strokeStyle = currentColor;
                 });
             });
+        }
 
-            document.getElementById('brushSize').addEventListener('input', (e) => {
-                brushSize = parseInt(e.target.value);
-                ctx.lineWidth = brushSize;
-            });
-
-            document.getElementById('sendBtn').addEventListener('click', sendToServer);
+        function freehandClear() {
+            if (!canvas || !ctx) return;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+        }
+        function brushSizeUp() {
+            brushSize = Math.min(50, brushSize + 5);
+            if (ctx) ctx.lineWidth = brushSize;
+        }
+        function brushSizeDown() {
+            brushSize = Math.max(5, brushSize - 5);
+            if (ctx) ctx.lineWidth = brushSize;
         }
 
 
         function switchStyle(style) {
             currentStyle = style;
-            const freehandPanel = document.getElementById('freehandPanel');
-            const gridPanel = document.getElementById('gridPanel');
-            const dotPanel = document.getElementById('dotPanel');
-            const freehandBtn = document.getElementById('freehandBtn');
-            const gridBtn = document.getElementById('gridBtn');
-            const dotBtn = document.getElementById('dotBtn');
-            const header = document.querySelector('.header');
-            const styleToggle = document.querySelector('.style-toggle');
-            const modeToggle = document.querySelector('.mode-toggle');
-            const bottomControls = document.querySelector('.main-content ~ .controls'); // Bottom controls (Clear/Send buttons)
-            const freehandControls = freehandPanel ? freehandPanel.querySelector('.controls') : null; // Color controls in freehand panel
+            var freehandPanel = document.getElementById('freehandPanel');
+            var gridPanel = document.getElementById('gridPanel');
+            var dotPanel = document.getElementById('dotPanel');
 
-            // Reset all panels and buttons
             freehandPanel.classList.remove('active');
-            gridPanel.classList.add('hidden');
-            if (dotPanel) dotPanel.classList.add('hidden');
-            freehandBtn.classList.remove('active');
-            gridBtn.classList.remove('active');
-            if (dotBtn) dotBtn.classList.remove('active');
-
+            if (freehandPanel) freehandPanel.style.setProperty('display', style === 'freehand' ? 'block' : 'none', 'important');
+            var freehandOverlay = document.getElementById('freehandControlsOverlay');
+            if (freehandOverlay) freehandOverlay.style.display = (style === 'freehand') ? 'block' : 'none';
+            if (gridPanel) {
+                gridPanel.classList.toggle('hidden', style !== 'grid');
+                gridPanel.style.setProperty('display', style === 'grid' ? 'block' : 'none', 'important');
+            }
+            if (dotPanel) {
+                dotPanel.classList.toggle('hidden', style !== 'dot');
+                dotPanel.style.setProperty('display', style === 'dot' ? 'block' : 'none', 'important');
+            }
             if (style === 'freehand') {
                 freehandPanel.classList.add('active');
-                freehandBtn.classList.add('active');
-                if (header) header.style.display = 'flex';
-                if (styleToggle) styleToggle.style.display = 'flex';
-                if (modeToggle) modeToggle.style.display = 'flex';
-                // Show color controls in freehand panel
-                if (freehandControls) {
-                    freehandControls.style.display = 'flex';
-                    freehandControls.style.visibility = 'visible';
-                    freehandControls.style.opacity = '1';
-                }
-                // Show bottom controls (Clear/Send buttons)
-                if (bottomControls) bottomControls.style.display = 'flex';
-                
-                // Hide grid controls (CSS will handle this via body:has selector)
-            } else if (style === 'grid') {
-                gridPanel.classList.remove('hidden');
-                gridBtn.classList.add('active');
-                // Hide UI elements when grid is active
-                if (header) header.style.display = 'none';
-                if (styleToggle) styleToggle.style.display = 'none';
-                if (modeToggle) modeToggle.style.display = 'none';
-                if (bottomControls) bottomControls.style.display = 'none';
-                // Note: freehandControls are hidden automatically when freehandPanel is hidden
-                
-                // Ensure grid panel is visible
-                if (gridPanel) {
-                    gridPanel.style.display = 'block';
-                    gridPanel.style.visibility = 'visible';
-                }
-                // Grid controls are visible by default (display: flex in inline style), CSS hides them when panel is hidden
-            } else if (style === 'dot') {
-                if (dotPanel) {
-                    dotPanel.classList.remove('hidden');
-                    dotPanel.style.display = 'block';
-                    dotPanel.style.visibility = 'visible';
-                }
-                if (dotBtn) dotBtn.classList.add('active');
-                if (header) header.style.display = 'none';
-                if (styleToggle) styleToggle.style.display = 'none';
-                if (modeToggle) modeToggle.style.display = 'none';
-                if (bottomControls) bottomControls.style.display = 'none';
+                if (typeof scheduleResizeCanvas === 'function') setTimeout(scheduleResizeCanvas, 0);
             }
+            var chrome = document.getElementById('drawingChrome');
+            if (chrome) chrome.style.display = (style === 'freehand') ? 'block' : 'none';
         }
 
         function switchMode(mode) {
             currentMode = mode;
-            const drawBtn = document.getElementById('drawModeBtn');
-            const uploadBtn = document.getElementById('uploadModeBtn');
-            const drawArea = document.getElementById('drawMode');
-            const uploadArea = document.getElementById('uploadMode');
+            var drawBtn = document.getElementById('drawModeBtn');
+            var uploadBtn = document.getElementById('uploadModeBtn');
+            var drawArea = document.getElementById('drawMode');
+            var uploadArea = document.getElementById('uploadMode');
 
             if (mode === 'draw') {
-                drawBtn.classList.add('active');
-                uploadBtn.classList.remove('active');
-                if (drawArea) { drawArea.style.setProperty('display', 'flex', 'important'); }
-                if (uploadArea) { uploadArea.style.setProperty('display', 'none', 'important'); }
+                if (drawBtn) { drawBtn.classList.add('active'); drawBtn.style.background = '#00ff00'; drawBtn.style.color = '#000'; }
+                if (uploadBtn) { uploadBtn.classList.remove('active'); uploadBtn.style.background = '#333'; uploadBtn.style.color = '#00ff00'; }
+                if (drawArea) drawArea.style.setProperty('display', 'flex', 'important');
+                if (uploadArea) uploadArea.style.setProperty('display', 'none', 'important');
             } else {
-                drawBtn.classList.remove('active');
-                uploadBtn.classList.add('active');
-                if (drawArea) { drawArea.style.setProperty('display', 'none', 'important'); }
-                if (uploadArea) { uploadArea.style.setProperty('display', 'flex', 'important'); }
+                if (drawBtn) { drawBtn.classList.remove('active'); drawBtn.style.background = '#333'; drawBtn.style.color = '#00ff00'; }
+                if (uploadBtn) { uploadBtn.classList.add('active'); uploadBtn.style.background = '#00ff00'; uploadBtn.style.color = '#000'; }
+                if (drawArea) drawArea.style.setProperty('display', 'none', 'important');
+                if (uploadArea) uploadArea.style.setProperty('display', 'flex', 'important');
             }
         }
 
@@ -946,7 +1380,6 @@
                         return;
                     }
                 } else {
-                    // Grid
                     if (gridP5Canvas && gridP5Canvas.elt) {
                         gridDisplay();
                         imageToSend = gridP5Canvas.elt.toDataURL('image/png');
@@ -962,22 +1395,51 @@
                 return;
             }
 
-            await sendImageToServer(imageToSend);
+            showUploadModeModal(function(mode) {
+                sendImageToServer(imageToSend, mode);
+            });
         }
 
-        async function sendImageToServer(imageToSend) {
+        function showUploadModeModal(callback) {
+            pendingUploadCallback = callback;
+            document.body.classList.add('upload-modal-open');
+            document.getElementById('uploadModeModal').classList.add('show');
+        }
+
+        function hideUploadModeModal() {
+            document.getElementById('uploadModeModal').classList.remove('show');
+            document.body.classList.remove('upload-modal-open');
+            pendingUploadCallback = null;
+        }
+
+        function confirmUploadMode(mode) {
+            var cb = pendingUploadCallback;
+            hideUploadModeModal();
+            if (typeof cb === 'function') {
+                try {
+                    cb(mode);
+                } catch (err) {
+                    showToast('Error sending image', 'error');
+                }
+            }
+        }
+
+        async function sendImageToServer(imageToSend, mode) {
+            mode = mode || 'lines';
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({
                     type: 'image_submit',
                     image: imageToSend,
-                    style: currentStyle
+                    style: currentStyle,
+                    mode: mode
                 }));
-                showToast('Sending to drone...');
+                showToast('Sending (' + mode + ')...');
             } else {
                 try {
                     const blob = await dataURLtoBlob(imageToSend);
                     const formData = new FormData();
                     formData.append('image', blob, 'drawing.png');
+                    formData.append('mode', mode);
 
                     const response = await fetch('/api/upload', {
                         method: 'POST',
@@ -986,14 +1448,33 @@
 
                     const data = await response.json();
                     if (data.success) {
-                        showToast('Image sent successfully!');
+                        showToast('Image sent! Saved as ' + (data.filename || ''));
+                        if (data.filename) updateLastUploadImage(data.filename);
                     } else {
-                        showToast('Error: ' + data.error, 'error');
+                        showToast('Error: ' + (data.error || 'Unknown'), 'error');
                     }
                 } catch (error) {
                     showToast('Error sending image', 'error');
                 }
             }
+        }
+
+        function updateLastUploadImage(filename) {
+            var img = document.getElementById('ipadLastUploadImg');
+            var wrap = document.getElementById('ipadLastUploadWrap');
+            if (!img || !wrap) return;
+            if (filename) {
+                img.src = '/uploads/' + encodeURIComponent(filename) + '?t=' + Date.now();
+                img.style.display = 'block';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+            }
+        }
+        function fetchLastUpload() {
+            fetch('/api/last-upload').then(function(r) { return r.json(); }).then(function(data) {
+                if (data && data.filename) updateLastUploadImage(data.filename);
+            }).catch(function() {});
         }
 
         function dataURLtoBlob(dataURL) {
@@ -1006,20 +1487,32 @@
             
             ws = new WebSocket(wsUrl);
             
-            ws.onopen = () => {
+            ws.onopen = function() {
                 document.getElementById('statusIndicator').classList.add('connected');
                 showToast('Connected');
+                ipadLog('Connected to server', 'info');
             };
-            
-            ws.onmessage = (event) => {
+
+            ws.onmessage = function(event) {
                 try {
-                    const data = JSON.parse(event.data);
+                    var data = JSON.parse(event.data);
                     if (data.type === 'ack') {
-                        showToast('Image received by server');
+                        if (data.success && data.filename) {
+                            showToast('Saved as ' + data.filename);
+                            ipadLog('Image saved: ' + data.filename, 'info');
+                            updateLastUploadImage(data.filename);
+                        } else if (data.success) {
+                            showToast('Image received by server');
+                            ipadLog('Image received by server', 'info');
+                        } else {
+                            showToast(data.error || 'Error', 'error');
+                            ipadLog(data.error || 'Error', 'error');
+                        }
+                    } else if (data.type === 'image_saved' && data.filename) {
+                        ipadLog('New image from iPad: ' + data.filename, 'info');
+                        updateLastUploadImage(data.filename);
                     }
-                } catch (e) {
-                    // Ignore non-JSON messages
-                }
+                } catch (e) {}
             };
             
             ws.onerror = () => {
@@ -1586,38 +2079,49 @@ function gridSetColor(index) {
           gridCreateRasterPoints();
         }
         
-        function gridSaveIMG() {
+        function gridUploadIMG() {
           if (!gridP5Canvas || !gridP5Instance) return;
           var p = gridP5Instance;
           gridDisplay();
-          
-          // Create filename with timestamp
-          var now = new Date();
-          var year = now.getFullYear();
-          var month = String(now.getMonth() + 1).padStart(2, '0');
-          var day = String(now.getDate()).padStart(2, '0');
-          var hour = String(now.getHours()).padStart(2, '0');
-          var minute = String(now.getMinutes()).padStart(2, '0');
-          var second = String(now.getSeconds()).padStart(2, '0');
-          var millis = String(now.getMilliseconds()).padStart(3, '0');
-          var filename = "IMG_" + year + '-' + month + '-' + day + '_' + hour + '-' + minute + '-' + second + '_' + millis + ".png";
-          
-          // Use p5.js save function to download the image
-          p.save(gridP5Canvas, filename);
-          
-          // Also try to send to server if WebSocket is available
+          try {
+            var canvasData = gridP5Canvas.elt.toDataURL('image/png');
+            showUploadModeModal(function(mode) {
+              gridDoUpload(canvasData, mode);
+            });
+          } catch (e) {
+            // Ignore if not available
+          }
+        }
+        function gridDoUpload(canvasData, mode) {
           try {
             if (ws && ws.readyState === WebSocket.OPEN) {
-              var canvasData = gridP5Canvas.elt.toDataURL('image/png');
               ws.send(JSON.stringify({
                 type: 'image_submit',
                 image: canvasData,
-                style: 'grid'
+                style: 'grid',
+                mode: mode
               }));
+              showToast('Sent to server (' + mode + ')');
+            } else {
+              (async function() {
+                try {
+                  var blob = await fetch(canvasData).then(function(r) { return r.blob(); });
+                  var formData = new FormData();
+                  formData.append('image', blob, 'drawing.png');
+                  formData.append('mode', mode);
+                  var resp = await fetch('/api/upload', { method: 'POST', body: formData });
+                  var data = await resp.json();
+                  if (data.success) {
+                    showToast('Saved as ' + (data.filename || ''));
+                  } else {
+                    showToast('Error: ' + (data.error || 'Unknown'), 'error');
+                  }
+                } catch (err) {
+                  showToast('Error sending image', 'error');
+                }
+              })();
             }
-          } catch (e) {
-            // Ignore if WebSocket is not available
-          }
+          } catch (e) {}
         }
         
         function gridSetupColorPalette() {
@@ -1795,9 +2299,47 @@ function gridSetColor(index) {
           dotDrawingLayer.clear();
           dotSetColor(1);
         }
-        function dotSaveIMG() {
-          if (!dotP5Instance) return;
-          dotP5Instance.save(dotMainCanvas, 'DOT_' + Date.now() + '.png');
+        function dotUploadIMG() {
+          if (!dotP5Instance || !dotMainCanvas || !dotMainCanvas.elt) return;
+          try {
+            var canvasData = dotMainCanvas.elt.toDataURL('image/png');
+            showUploadModeModal(function(mode) {
+              dotDoUpload(canvasData, mode);
+            });
+          } catch (e) {
+            // Ignore if not available
+          }
+        }
+        function dotDoUpload(canvasData, mode) {
+          try {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: 'image_submit',
+                image: canvasData,
+                style: 'dot',
+                mode: mode
+              }));
+              showToast('Sent to server (' + mode + ')');
+            } else {
+              (async function() {
+                try {
+                  var blob = await fetch(canvasData).then(function(r) { return r.blob(); });
+                  var formData = new FormData();
+                  formData.append('image', blob, 'drawing.png');
+                  formData.append('mode', mode);
+                  var resp = await fetch('/api/upload', { method: 'POST', body: formData });
+                  var data = await resp.json();
+                  if (data.success) {
+                    showToast('Saved as ' + (data.filename || ''));
+                  } else {
+                    showToast('Error: ' + (data.error || 'Unknown'), 'error');
+                  }
+                } catch (err) {
+                  showToast('Error sending image', 'error');
+                }
+              })();
+            }
+          } catch (e) {}
         }
         function dotSetupColorPalette() {
           var palette = document.getElementById('dotColorPalette');
