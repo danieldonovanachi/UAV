@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grid Paint</title>
+
+  <!-- PLEASE NO CHANGES BELOW THIS LINE (UNTIL I SAY SO) -->
+  <script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+  <script language="javascript" type="text/javascript" src="rasterpoint.js"></script>
+  <script language="javascript" type="text/javascript" src="responsive.js"></script>
+  <script language="javascript" type="text/javascript" src="gridPaint.js"></script>
+  <!-- OK, YOU CAN MAKE CHANGES BELOW THIS LINE AGAIN -->
+
+  <!-- SETINGS -->
+  <style>
+    html {
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+      position: fixed;
+      height: 100%;
+      width: 100%;
+      display: block;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      pointer-events: auto;
+    }
+    
+    canvas {
+      touch-action: none;
+      -webkit-touch-callout: none;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
+    }
+
+    * {
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: -moz-none;
+      -o-user-select: none;
+      user-select: none;
+    }
+
+    .icon {
+      position: fixed;
+      cursor: pointer;
+      mix-blend-mode: difference;
+      filter: invert(100%);
+    }
+
+    .color-icon {
+      cursor: pointer;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      transition: transform 0.1s;
+    }
+    
+    .color-icon:active {
+      transform: scale(0.9);
+    }
+    
+    .color-icon.active {
+      border: 3px solid #000;
+      box-shadow: 0 0 0 2px #fff;
+    }
+  </style>
+
+  <!-- IMG RESET -->
+  <div class="icon" style="width: 30px; height: 30px; top: 20px; right: 110px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="reset(); event.stopPropagation();" draggable="false">↻</div>
+
+  <!-- IMG DOWNLOAD -->
+  <div class="icon" style="width: 30px; height: 30px; top: 20px; right: 60px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 1001; pointer-events: auto;" onclick="saveIMG(); event.stopPropagation();" draggable="false">↓</div>
+
+  <!-- GRID SIZE -->
+  <div class="icon" id="gridMinus" style="width: 30px; height: 30px; bottom: 140px; right: 25px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001; pointer-events: auto;" draggable="false" onclick="setGridSize('-'); event.stopPropagation();">−</div>
+  <div class="icon" id="gridPlus" style="width: 30px; height: 30px; bottom: 90px; right: 25px; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; z-index: 1001; pointer-events: auto;" draggable="false" onclick="setGridSize('+'); event.stopPropagation();">+</div>
+
+  <!-- COLOR PALETTE - Horizontal at bottom -->
+  <div id="colorPalette" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 90%; overflow-x: auto; z-index: 1000; pointer-events: auto;" onclick="event.stopPropagation();">
+    <!-- Colors will be added dynamically -->
+  </div>
+
+</head>
+
+<body>
+</body>
+
+</html>
