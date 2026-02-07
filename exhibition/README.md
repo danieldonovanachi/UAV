@@ -41,11 +41,35 @@ cargo run --release -- 8080
    - Main exhibition interface: `http://localhost:8080`
    - iPad drawing interface: `http://localhost:8080/ipad`
 
+### Accessing from iPad or Other Devices
+
+To access the interface from an iPad or other device on the same network:
+
+1. **Find your computer's local IP address**:
+   - **macOS**: Open Terminal and run `ipconfig getifaddr en0` (or `en1` if en0 doesn't work)
+   - **Linux**: Run `hostname -I` or `ip addr show`
+   - **Windows**: Run `ipconfig` and look for "IPv4 Address"
+   - Or check in System Settings → Network
+
+2. **Ensure both devices are on the same WiFi network**
+
+3. **Access from iPad**:
+   - Open Safari on iPad
+   - Navigate to `http://<your-computer-ip>:8080/ipad`
+   - Example: If your computer IP is `192.168.1.100`, use `http://192.168.1.100:8080/ipad`
+
+4. **Troubleshooting**:
+   - Make sure the server is running (`cargo run --release`)
+   - Check firewall settings - port 8080 must be open
+   - Verify both devices show the same WiFi network name
+   - Try accessing `http://<your-computer-ip>:8080` first to test connectivity
+
 ### PX4 SITL Setup
 
 1. Start PX4 SITL:
 ```bash
 cd /path/to/PX4-Autopilot-SurfaceReferential
+cd /Users/danieldonovan-achi/PX4-Autopilot-SurfaceReferential
 make px4_sitl jmavsim
 # Or with Gazebo:
 make px4_sitl gazebo
@@ -82,6 +106,7 @@ make px4_sitl gazebo
 ### iPad Drawing Interface
 
 1. **Open iPad Interface**: Navigate to `http://<server-ip>:8080/ipad` on the iPad
+   - Replace `<server-ip>` with your computer's local IP address (see "Accessing from iPad" section above)
 2. **Draw or Upload**:
    - **Draw Mode**: Use finger or stylus to draw on the canvas
    - **Upload Mode**: Select a photo from the iPad's photo library
