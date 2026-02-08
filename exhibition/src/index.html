@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAV Exhibition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            min-height: 100vh;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 100vh;
+            width: 100vw;
+            padding: 10px;
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 15px;
+            border: 2px solid #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff0000;
+            box-shadow: 0 0 8px #ff0000;
+            flex-shrink: 0;
+        }
+        .status-indicator.connected {
+            background: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #888;
+        }
+        .connection-status .status-text.connected {
+            color: #00ff00;
+            text-shadow: 0 0 6px rgba(0, 255, 0, 0.5);
+        }
+
+        .panel {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin-top: 10px;
+            flex: 1 1 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel .preview-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .panel h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            flex-shrink: 0;
+        }
+
+        .upload-area {
+            border: 2px dashed #00ff00;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .upload-area:hover {
+            background: #0f0f0f;
+            border-color: #00ff88;
+        }
+
+        .upload-area.dragover {
+            background: #0f0f0f;
+            border-color: #00ff88;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #imagePreview {
+            margin: 20px 0;
+            flex-shrink: 0;
+            min-height: 80px;
+            max-height: 220px;
+            overflow: hidden;
+        }
+
+        #imagePreview img {
+            max-width: 100%;
+            max-height: 220px;
+            display: block;
+            border: 1px solid #333;
+        }
+        .log {
+            font-size: 13px;
+            flex: 1 1 0;
+            min-height: 140px;
+            overflow-y: auto;
+            background: #0a0a0a;
+            padding: 12px;
+            border: 1px solid #333;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            color: #00ff00;
+        }
+
+        .log-entry.error {
+            color: #ff0000;
+        }
+
+        .log-entry.warning {
+            color: #ffaa00;
+        }
+
+        /* Drone status panel - slightly bigger than content only */
+        .drone-status-panel {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 10px;
+            flex-shrink: 0;
+            min-height: 200px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .drone-status-panel .drone-image-wrap {
+            flex-shrink: 0;
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+
+        .drone-status-panel .drone-image-wrap img {
+            display: block;
+            max-width: 180px;
+            max-height: 180px;
+            object-fit: contain;
+        }
+
+        .drone-status-panel .drone-status-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .drone-status-panel .title {
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #00ff00;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .drone-status-panel .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+        }
+
+        .drone-status-panel .metric:last-child {
+            border-bottom: none;
+        }
+
+        .drone-status-panel .metric-label {
+            color: #888;
+        }
+
+        .drone-status-panel .metric-value {
+            color: #00ff00;
+            font-weight: bold;
+            text-shadow: 0 0 5px #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>UAV [UNARMEDARTVEHICLE]</h1>
+            <div class="connection-status">
+                <span class="status-indicator" id="statusIndicator" title="Connection status"></span>
+                <span class="status-text" id="statusLabel">Disconnected</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Image Input</h2>
+            <div class="upload-area" id="uploadArea">
+                <p>Drag & Drop Image Here</p>
+                <p style="font-size: 12px; color: #888; margin-top: 10px;">or click to select</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+            <div class="preview-label" id="previewLabel"></div>
+            <div id="imagePreview"></div>
+            <div class="log" id="log"></div>
+        </div>
+
+        <div class="drone-status-panel">
+            <div class="drone-image-wrap">
+                <img src="/static/drone.png" alt="D&C UAV V1">
+            </div>
+            <div class="drone-status-content">
+                <div class="title">D&C.UAV.V1</div>
+                <div class="metric">
+                    <span class="metric-label">Battery</span>
+                    <span class="metric-value" id="droneBattery">--%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Range</span>
+                    <span class="metric-value" id="droneRange">-- km</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Fly Time</span>
+                    <span class="metric-value" id="droneFlyTime">-- min</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function init() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+            });
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleFile(e.target.files[0]);
+            });
+
+            connectWebSocket();
+            startDroneStatusUpdates();
+            fetchServerLogs();
+            setInterval(fetchServerLogs, 3000);
+        }
+
+        let serverLogCount = 0;
+        function fetchServerLogs() {
+            fetch('/api/logs').then(r => r.json()).then(data => {
+                if (!data || !Array.isArray(data.logs)) return;
+                const logs = data.logs;
+                if (logs.length <= serverLogCount) return;
+                for (let i = serverLogCount; i < logs.length; i++) log(logs[i], 'info');
+                serverLogCount = logs.length;
+            }).catch(() => {});
+        }
+
+        function showPreview(src, label) {
+            const preview = document.getElementById('imagePreview');
+            const labelEl = document.getElementById('previewLabel');
+            preview.innerHTML = '<img src="' + src + '" alt="Upload preview">';
+            labelEl.textContent = label || '';
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                log('Please select an image file', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                showPreview(e.target.result, 'Current image (from this device)');
+                log('Loaded: ' + file.name, 'info');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(protocol + '//' + window.location.host + '/ws');
+            ws.onopen = () => {
+                const ind = document.getElementById('statusIndicator');
+                const lbl = document.getElementById('statusLabel');
+                if (ind) ind.classList.add('connected');
+                if (lbl) { lbl.textContent = 'Connected'; lbl.classList.add('connected'); }
+                log('Connected – images from iPad will appear here', 'info');
+            };
+            ws.onerror = () => {
+                const ind = document.getElementById('statusIndicator');
+                const lbl = document.getElementById('statusLabel');
+                if (ind) ind.classList.remove('connected');
+                if (lbl) { lbl.textContent = 'Disconnected'; lbl.classList.remove('connected'); }
+            };
+            ws.onclose = () => {
+                const ind = document.getElementById('statusIndicator');
+                const lbl = document.getElementById('statusLabel');
+                if (ind) ind.classList.remove('connected');
+                if (lbl) { lbl.textContent = 'Disconnected'; lbl.classList.remove('connected'); }
+                setTimeout(connectWebSocket, 3000);
+            };
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'image_saved' && data.filename) {
+                        const url = '/uploads/' + encodeURIComponent(data.filename) + '?t=' + Date.now();
+                        showPreview(url, 'From iPad – transferred');
+                        log('New image from iPad: ' + data.filename, 'info');
+                    }
+                } catch (_) {}
+            };
+        }
+
+        function startDroneStatusUpdates() {
+            function randomInRange(min, max, decimals) {
+                const v = min + Math.random() * (max - min);
+                return decimals === 0 ? Math.round(v) : Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals);
+            }
+            function update() {
+                document.getElementById('droneBattery').textContent = randomInRange(20, 95, 0) + '%';
+                document.getElementById('droneRange').textContent = randomInRange(0.5, 8, 1) + ' km';
+                document.getElementById('droneFlyTime').textContent = randomInRange(5, 28, 0) + ' min';
+            }
+            update();
+            setInterval(update, 4000);
+        }
+
+        function log(message, type) {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + (type || '');
+            entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        init();
+    </script>
+</body>
+</html>
