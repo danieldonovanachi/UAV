@@ -136,29 +136,6 @@
             display: block;
             border: 1px solid #333;
         }
-        .sim-buttons-pc {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-        .sim-btn-pc {
-            flex: 1;
-            min-width: 120px;
-            padding: 12px 16px;
-            background: #1a1a1a;
-            color: #00ff00;
-            border: 2px solid #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .sim-btn-pc:hover {
-            background: #00ff00;
-            color: #000;
-        }
         .log {
             font-size: 13px;
             flex: 1 1 0;
@@ -271,11 +248,6 @@
             <input type="file" id="fileInput" accept="image/*">
             <div class="preview-label" id="previewLabel"></div>
             <div id="imagePreview"></div>
-            <div class="sim-buttons-pc">
-                <button type="button" class="sim-btn-pc" id="planFlightBtnPc">Plan Flight</button>
-                <button type="button" class="sim-btn-pc" id="startSimBtnPc">Start Simulation</button>
-                <button type="button" class="sim-btn-pc" id="stopSimBtnPc">Stop Simulation</button>
-            </div>
             <div class="log" id="log"></div>
         </div>
 
@@ -327,27 +299,6 @@
             startDroneStatusUpdates();
             fetchServerLogs();
             setInterval(fetchServerLogs, 3000);
-            document.getElementById('planFlightBtnPc').addEventListener('click', () => sendSignalPc('plan_flight'));
-            document.getElementById('startSimBtnPc').addEventListener('click', () => sendSignalPc('start_simulation'));
-            document.getElementById('stopSimBtnPc').addEventListener('click', () => sendSignalPc('stop_simulation'));
-        }
-
-        async function sendSignalPc(action) {
-            try {
-                const resp = await fetch('/api/signal', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action })
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    log(action.replace('_', ' ') + ' sent', 'info');
-                } else {
-                    log('Error: ' + (data.error || 'unknown'), 'error');
-                }
-            } catch (err) {
-                log('Failed to send signal', 'error');
-            }
         }
 
         let serverLogCount = 0;
