@@ -297,19 +297,23 @@
 
             connectWebSocket();
             startDroneStatusUpdates();
+            serverLogCount = 0;
             fetchServerLogs();
-            setInterval(fetchServerLogs, 3000);
+            setInterval(fetchServerLogs, 1500);
         }
 
         let serverLogCount = 0;
         function fetchServerLogs() {
-            fetch('/api/logs').then(r => r.json()).then(data => {
-                if (!data || !Array.isArray(data.logs)) return;
-                const logs = data.logs;
-                if (logs.length <= serverLogCount) return;
-                for (let i = serverLogCount; i < logs.length; i++) log(logs[i], 'info');
-                serverLogCount = logs.length;
-            }).catch(() => {});
+            fetch('/api/logs')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !Array.isArray(data.logs)) return;
+                    const logs = data.logs;
+                    if (logs.length <= serverLogCount) return;
+                    for (let i = serverLogCount; i < logs.length; i++) log(logs[i], 'info');
+                    serverLogCount = logs.length;
+                })
+                .catch(() => {});
         }
 
         function showPreview(src, label) {
@@ -341,6 +345,7 @@
                 if (ind) ind.classList.add('connected');
                 if (lbl) { lbl.textContent = 'Connected'; lbl.classList.add('connected'); }
                 log('Connected – images from iPad will appear here', 'info');
+                fetchServerLogs();
             };
             ws.onerror = () => {
                 const ind = document.getElementById('statusIndicator');
@@ -383,6 +388,7 @@
 
         function log(message, type) {
             const logEl = document.getElementById('log');
+            if (!logEl) return;
             const entry = document.createElement('div');
             entry.className = 'log-entry ' + (type || '');
             entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
